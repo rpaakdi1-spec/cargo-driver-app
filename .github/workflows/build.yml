@@ -19,21 +19,15 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Gradle 캐시
-        uses: actions/cache@v4
+      - name: Gradle 설치 (wrapper jar 없이)
+        uses: gradle/actions/setup-gradle@v3
         with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ hashFiles('**/*.gradle*') }}
-
-      - name: gradlew 실행 권한
-        run: chmod +x android/gradlew
+          gradle-version: '8.4'
 
       - name: APK 빌드
         run: |
           cd android
-          ./gradlew assembleDebug --no-daemon
+          gradle assembleDebug --no-daemon
 
       - name: APK 다운로드 등록
         uses: actions/upload-artifact@v4
