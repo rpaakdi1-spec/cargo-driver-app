@@ -1,0 +1,39 @@
+// app/build.gradle
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.cargo.driver'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.cargo.driver"
+        minSdk 26          // Android 8.0 이상 (Foreground Service 안정 지원)
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
+    // FusedLocationProvider — 배터리 효율적인 GPS
+    implementation 'com.google.android.gms:play-services-location:21.2.0'
+    // OkHttp — GPS 좌표를 서버로 전송
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+}

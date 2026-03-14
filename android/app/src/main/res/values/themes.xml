@@ -1,0 +1,10 @@
+<resources>
+    <style name="Theme.CargoDriver" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#1D4ED8</item>
+        <item name="colorPrimaryVariant">#1E3A8A</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="android:statusBarColor">#0F172A</item>
+        <item name="android:windowBackground">#0F172A</item>
+    </style>
+    <color name="purple_500">#1D4ED8</color>
+</resources>
