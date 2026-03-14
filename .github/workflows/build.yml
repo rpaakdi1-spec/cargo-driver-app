@@ -1,0 +1,43 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: JDK 17 설정
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Gradle 캐시
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('**/*.gradle*') }}
+
+      - name: gradlew 실행 권한
+        run: chmod +x android/gradlew
+
+      - name: APK 빌드
+        run: |
+          cd android
+          ./gradlew assembleDebug --no-daemon
+
+      - name: APK 다운로드 등록
+        uses: actions/upload-artifact@v4
+        with:
+          name: 화물운송기사앱
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
