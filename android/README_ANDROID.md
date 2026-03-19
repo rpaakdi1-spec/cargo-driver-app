@@ -1,176 +1,218 @@
-# 화물운송 기사 Android 앱
+# 화물운송 기사 앱 — 접속 URL & APK 배포 가이드
 
-## 개요
-기사용 GPS 추적 앱. WebView로 기존 `driver.html`을 표시하면서,  
-**Foreground Service**로 백그라운드에서도 GPS를 계속 서버에 전송합니다.  
-네비 앱 사용 중, 화면 꺼짐, 다른 앱 전환 중에도 GPS가 끊기지 않습니다.
+> 최종 업데이트: 2025-03-19
 
 ---
 
-## 빌드 전 필수 설정
+## 📌 서비스 접속 URL
 
-### 1. 서버 URL 변경
-`android/app/src/main/java/com/cargo/driver/MainActivity.java` 파일의 2줄을 수정하세요:
-
-```java
-// ★ 아래 두 줄을 실제 배포 URL로 교체
-public static final String DRIVER_URL  = "https://YOUR_DOMAIN.pages.dev/driver.html";
-public static final String SERVER_BASE = "https://YOUR_DOMAIN.pages.dev";
-```
-
-예시:
-```java
-public static final String DRIVER_URL  = "https://cargo-abc123.pages.dev/driver.html";
-public static final String SERVER_BASE = "https://cargo-abc123.pages.dev";
-```
+| 역할 | URL | 비고 |
+|------|-----|------|
+| 🏠 **메인 (역할 선택)** | `https://0a89cb78-a46a-4ebb-a43c-ddadb273ca86.vip.gensparksite.com` | 누구나 접속 |
+| 🛡️ **관리자** | `https://0a89cb78-a46a-4ebb-a43c-ddadb273ca86.vip.gensparksite.com/admin.html` | 비밀번호: `rhkdtls1` |
+| 🏢 **고객사 룸** | `https://0a89cb78-a46a-4ebb-a43c-ddadb273ca86.vip.gensparksite.com/room.html?id=ROOM_ID` | 룸 비밀번호 |
+| 🚛 **기사 업무** | `https://0a89cb78-a46a-4ebb-a43c-ddadb273ca86.vip.gensparksite.com/driver.html` | 기사명 + PIN |
+| 🖼️ **사진 보관함** | `https://0a89cb78-a46a-4ebb-a43c-ddadb273ca86.vip.gensparksite.com/gallery.html` | 비밀번호: `rhkdtls1` |
+| 📱 **QR 코드** | `https://0a89cb78-a46a-4ebb-a43c-ddadb273ca86.vip.gensparksite.com/qr.html` | 누구나 접속 |
+| 📖 **사용법 안내** | `https://0a89cb78-a46a-4ebb-a43c-ddadb273ca86.vip.gensparksite.com/guide.html` | 누구나 접속 |
 
 ---
 
-## 빌드 방법
+## 📱 기사 앱 (Android APK) — GitHub Actions 자동 빌드
 
-### 환경 준비
-- **Android Studio** 최신 버전 설치 (Hedgehog 이상 권장)
-- **JDK 17** 이상
-- **Android SDK** API 34 설치
+### APK 빌드 방법 (GitHub Actions)
 
-### 빌드 순서
+```
+[소스 코드]  →  [GitHub 저장소 push]  →  [Actions 자동 빌드]  →  [APK 다운로드]
+```
 
+#### 1단계: 코드 변경 후 GitHub에 push
 ```bash
-# 1. android/ 폴더를 Android Studio로 열기
-#    File → Open → android/ 폴더 선택
-
-# 2. Gradle Sync 완료 대기
-
-# 3. APK 빌드
-#    Build → Build Bundle(s) / APK(s) → Build APK(s)
-
-# 4. 생성된 APK 위치
-#    android/app/build/outputs/apk/debug/app-debug.apk
+git add .
+git commit -m "기능 업데이트"
+git push origin main
 ```
+→ GitHub Actions가 **자동으로 APK 빌드** 시작 (약 5~7분 소요)
 
-### 명령줄 빌드 (선택)
-```bash
-cd android
-./gradlew assembleDebug
-# APK: app/build/outputs/apk/debug/app-debug.apk
-```
+#### 2단계: APK 다운로드
+1. GitHub 저장소 → **Actions** 탭
+2. 최신 "Build Android APK" 워크플로우 클릭
+3. 하단 **Artifacts** 섹션 → **화물운송기사앱** 클릭 → ZIP 다운로드
+4. ZIP 압축 해제 → `app-debug.apk` 파일 확인
 
 ---
 
-## 기사 폰에 설치하는 방법
+## 📲 기사님 폰에 APK 설치 방법
 
-### 방법 A — USB 케이블 (개발자 모드)
-1. 기사 폰 → 설정 → 소프트웨어 정보 → 빌드번호 7번 탭 → 개발자 옵션 활성화
-2. 설정 → 개발자 옵션 → USB 디버깅 ON
-3. PC에 USB 연결
-4. `adb install app-debug.apk`
-
-### 방법 B — APK 파일 직접 전송 (가장 간단)
-1. `app-debug.apk` 파일을 카카오톡 등으로 폰에 전송
-2. 폰에서 파일 열기
-3. "출처를 알 수 없는 앱" 허용 → 설치
-
-### 방법 C — Google Play 내부 테스트 (배포용)
-- Google Play Console → 내부 테스트 트랙 → APK 업로드 → 기사 이메일 초대
-
----
-
-## 앱 최초 실행 시 권한 설정
-
-앱 실행 후 아래 권한을 반드시 허용해야 합니다:
-
-| 권한 | 설정 값 | 이유 |
-|---|---|---|
-| 위치 | **항상 허용** | 네비 사용 중 백그라운드 GPS |
-| 알림 | 허용 | Foreground Service 상태바 표시 |
-
-> ⚠️ "앱 사용 중에만 허용"으로 설정하면 네비 사용 시 GPS가 중단됩니다.  
-> 반드시 **"항상 허용"** 으로 설정해 주세요.
-
-**위치 권한 "항상 허용" 설정 경로:**  
-설정 → 앱 → 화물운송 기사 → 권한 → 위치 → **항상 허용**
-
----
-
-## 동작 방식
-
+### 방법 1: 카카오톡으로 전송 (권장)
 ```
-[기사가 업무 시작 클릭]
-        ↓
-[driver.html JS] → window.AndroidGPS.startGps(deliveryId)
-        ↓
-[GpsService 시작] → Foreground Service (상태바에 알림 표시)
-        ↓
-[FusedLocationProvider] → 20초마다 GPS 수신
-        ↓
-[OkHttp] → 30초마다 서버 PATCH (current_lat, current_lng)
-        ↓
-[네비 앱 켜도 GPS 계속 전송 ✅]
-[화면 꺼져도 GPS 계속 전송 ✅]
-[다른 앱 전환해도 GPS 계속 전송 ✅]
-        ↓
-[기사가 하차완료 클릭]
-        ↓
-[driver.html JS] → window.AndroidGPS.stopGps()
-        ↓
-[GpsService 중지] ← 상태바 알림 사라짐
+1. app-debug.apk 파일을 카카오톡으로 기사님께 전송
+2. 기사님 폰에서 카카오톡 파일 다운로드
+3. 파일 탭에서 APK 파일 클릭
+4. "알 수 없는 출처 앱 설치" → 허용
+5. 설치 완료
+```
+
+### 방법 2: 구글 드라이브로 공유
+```
+1. APK를 구글 드라이브에 업로드
+2. 링크 공유 → 기사님에게 전송
+3. 기사님이 링크 접속 → 다운로드 → 설치
 ```
 
 ---
 
-## 파일 구조
+## ⚙️ 설치 후 필수 권한 설정 (기사님 폰)
+
+> ⚠️ 이 설정을 안 하면 GPS가 네비 중에 꺼집니다!
+
+### 위치 권한 — "항상 허용" 설정
+```
+설정 → 앱 → 화물운송 기사 → 권한 → 위치
+→ "앱 사용 중에만 허용" ❌
+→ "항상 허용" ✅  ← 이것 선택!
+```
+
+### 배터리 최적화 해제 (삼성 기준)
+```
+설정 → 배터리 → 앱별 배터리 관리
+→ 화물운송 기사 → "제한 없음" 선택
+```
+
+### 자동 시작 허용 (삼성 기준)
+```
+설정 → 앱 → 화물운송 기사 → 배터리
+→ "백그라운드에서 앱 활동 허용" ON
+```
+
+---
+
+## 🔄 앱 업데이트 배포 절차
+
+웹사이트(driver.html, utils.js 등)가 업데이트되면:
+
+### 웹사이트만 변경된 경우
+```
+1. Genspark Publish 탭에서 재배포
+   → 앱은 WebView로 최신 URL을 로드하므로 자동 반영
+   → APK 재설치 불필요 ✅
+```
+
+### APK 자체 변경이 필요한 경우 (네이티브 코드 수정 시)
+```
+1. android/ 폴더 내 Java 파일 수정
+2. GitHub에 push
+3. Actions에서 APK 빌드 완료 대기 (5~7분)
+4. 새 APK 다운로드
+5. 기사님 폰에 재설치 (기존 앱 위에 덮어씌워도 됨)
+```
+
+---
+
+## 🏗️ 앱 구조
 
 ```
 android/
-├── build.gradle                          # 루트 빌드 설정
-├── settings.gradle                       # 프로젝트 설정
-├── gradle.properties                     # Gradle 옵션
+├── .github/workflows/build.yml     ← GitHub Actions 자동 빌드
+├── build.gradle                    ← 루트 Gradle 설정
+├── settings.gradle                 ← 모듈 설정
+├── gradle.properties
+├── gradlew                         ← Gradle Wrapper
 └── app/
-    ├── build.gradle                      # 앱 의존성 (OkHttp, FusedLocation 등)
+    ├── build.gradle                ← 앱 Gradle 설정 (SDK, 의존성)
     └── src/main/
-        ├── AndroidManifest.xml           # 권한, 서비스 등록
+        ├── AndroidManifest.xml     ← 권한 선언, 서비스 등록
         ├── java/com/cargo/driver/
-        │   ├── MainActivity.java         # WebView + 권한 요청
-        │   ├── GpsService.java           # ★ Foreground GPS 서비스
-        │   └── WebAppInterface.java      # JS ↔ 네이티브 브릿지
+        │   ├── MainActivity.java   ← WebView + 권한 요청
+        │   ├── GpsService.java     ← 백그라운드 GPS 포그라운드 서비스
+        │   └── WebAppInterface.java← JS ↔ 네이티브 브릿지
         └── res/
-            ├── layout/activity_main.xml  # WebView 레이아웃
-            ├── values/strings.xml        # 앱 이름
-            ├── values/themes.xml         # 테마/색상
-            └── drawable/ic_gps.xml       # GPS 아이콘
+            ├── layout/activity_main.xml
+            ├── values/strings.xml
+            ├── values/themes.xml
+            └── drawable/ic_gps.xml
 ```
 
 ---
 
-## 웹 driver.js와의 연동
+## 🌐 앱에 설정된 URL
 
-`driver.js`는 `window.AndroidGPS` 존재 여부로 앱/웹 환경을 자동 감지합니다:
-
-```javascript
-// 앱 환경 → Foreground Service GPS 사용
-if (window.AndroidGPS && currentDelivery) {
-    window.AndroidGPS.startGps(currentDelivery.id);
-}
-
-// 웹 환경 → 기존 watchPosition 방식
-else {
-    navigator.geolocation.watchPosition(...);
-}
+`MainActivity.java`에 하드코딩된 URL:
+```java
+public static final String DRIVER_URL  = "https://0a89cb78-a46a-4ebb-a43c-ddadb273ca86.vip.gensparksite.com/driver.html";
+public static final String SERVER_BASE = "https://0a89cb78-a46a-4ebb-a43c-ddadb273ca86.vip.gensparksite.com";
 ```
 
-별도 코드 수정 없이 **웹과 앱 양쪽에서 동일하게 동작**합니다.
+URL이 변경되면 이 두 줄만 수정 후 재빌드하면 됩니다.
 
 ---
 
-## 자주 묻는 질문
+## 📋 JS ↔ 네이티브 브릿지 (WebAppInterface)
 
-**Q. GPS가 안 잡혀요**  
-A. 설정 → 앱 → 화물운송 기사 → 권한 → 위치 → "항상 허용" 확인
+기사 웹페이지(driver.html)에서 아래 함수로 네이티브 기능 호출:
 
-**Q. 앱이 갑자기 꺼져요**  
-A. 설정 → 배터리 → 앱별 배터리 사용 → 화물운송 기사 → "제한 없음" 설정  
-(삼성: 설정 → 배터리 및 디바이스 케어 → 배터리 → 백그라운드 사용 제한 → 화물운송 기사 제외)
+| JS 호출 | 동작 |
+|---------|------|
+| `window.AndroidGPS.startGps(deliveryId)` | 백그라운드 GPS 포그라운드 서비스 시작 |
+| `window.AndroidGPS.stopGps()` | GPS 서비스 중지 |
+| `window.AndroidGPS.setDeliveryId(id)` | 배송 ID 업데이트 |
+| `window.AndroidGPS.moveToBackground()` | 홈 화면으로 이동 (앱 최소화) |
+| `window.AndroidGPS.isGpsRunning()` | GPS 실행 여부 반환 (`"true"/"false"`) |
+| `window.AndroidGPS.isNativeApp()` | 앱 환경 여부 반환 (`"true"`) |
+| `window.AndroidGPS.showToast(msg)` | 안드로이드 토스트 메시지 표시 |
 
-**Q. 상태바 알림이 없어도 GPS가 전송되나요?**  
-A. 아니오. Foreground Service는 반드시 알림이 표시되어야 동작합니다 (Android 정책).  
-알림을 없애면 서비스가 백그라운드 서비스로 전환되어 언제든 종료될 수 있습니다.
+---
+
+## 🆚 웹 브라우저 vs 앱 차이점
+
+| 기능 | 웹 브라우저 | Android 앱 |
+|------|------------|------------|
+| GPS 백그라운드 유지 | ❌ 꺼짐 (네비 사용 시) | ✅ 항상 유지 |
+| 화면 꺼짐 후 GPS | ❌ 중단될 수 있음 | ✅ 계속 작동 |
+| 앱 강제 종료 후 | ❌ 중단 | ✅ START_STICKY로 재시작 |
+| 상차완료 → 홈 전환 | ⚠️ intent:// 시도 | ✅ 즉시 홈으로 이동 |
+| 상태바 알림 | ❌ 없음 | ✅ "GPS 전송 중 📍위도,경도" |
+| 설치 방법 | URL 접속 | APK 설치 |
+
+---
+
+## 🔧 로컬 빌드 방법 (Android Studio)
+
+GitHub Actions 없이 직접 빌드하려면:
+
+```bash
+# 1. Android Studio 설치
+#    https://developer.android.com/studio
+
+# 2. 프로젝트 열기
+#    File → Open → android/ 폴더 선택
+
+# 3. Gradle sync 완료 대기 (2~3분)
+
+# 4. APK 빌드
+#    Build → Build Bundle(s) / APK(s) → Build APK(s)
+
+# 5. APK 위치
+#    android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+---
+
+## ❓ 자주 묻는 문제
+
+### Q. APK 설치 시 "파싱 오류"가 나요
+- Android 7.0 미만 기기는 미지원
+- 파일이 완전히 다운로드됐는지 확인
+
+### Q. GPS가 계속 꺼져요
+- 위치 권한 → **"항상 허용"** 재확인
+- 배터리 최적화 → **"제한 없음"** 재확인
+- 앱 재시작 후 GPS 시작 버튼 수동 클릭
+
+### Q. "알 수 없는 출처 앱" 경고가 나요
+- 정상입니다. Google Play 미등록 앱이므로 직접 설치(사이드로딩) 시 표시됩니다.
+- "그래도 설치" 또는 "허용" 클릭하면 됩니다.
+
+### Q. 앱 업데이트 후 기존 데이터가 사라지나요
+- 아니요. 데이터는 서버 DB에 저장됩니다.
+- APK 재설치 시 기존 앱 위에 덮어씌우면 로그인 상태도 유지됩니다.
