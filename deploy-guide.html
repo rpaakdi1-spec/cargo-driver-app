@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APK 배포 가이드 — 화물운송 기사 앱</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --surface2: #263045;
+            --border: rgba(255,255,255,0.08);
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --green: #10b981;
+            --green-light: #34d399;
+            --yellow: #f59e0b;
+            --red: #ef4444;
+            --cyan: #0891b2;
+            --text: #e2e8f0;
+            --text-dim: #94a3b8;
+            --code-bg: #0d1117;
+            --radius: 12px;
+        }
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            min-height: 100vh;
+        }
+
+        /* ── 헤더 ── */
+        .header {
+            background: linear-gradient(135deg, #1e1b4b, #312e81, #1e3a8a);
+            padding: 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.4);
+        }
+        .header-inner {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .header-logo {
+            display: flex; align-items: center; gap: 10px;
+            font-size: 1.05rem; font-weight: 700;
+        }
+        .header-logo i { color: #818cf8; }
+        .header-back {
+            color: rgba(255,255,255,0.75);
+            text-decoration: none;
+            padding: 6px 14px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            display: flex; align-items: center; gap: 6px;
+            transition: background 0.2s;
+        }
+        .header-back:hover { background: rgba(255,255,255,0.1); }
+
+        /* ── 히어로 ── */
+        .hero {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e3a8a 100%);
+            padding: 48px 20px 40px;
+            text-align: center;
+        }
+        .hero h1 {
+            font-size: 1.9rem;
+            font-weight: 800;
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }
+        .hero h1 span { color: #818cf8; }
+        .hero p { color: rgba(255,255,255,0.7); font-size: 0.95rem; }
+
+        /* ── 본문 ── */
+        .body-wrap {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 32px 20px 80px;
+        }
+        .panel { display: block; }
+
+        /* ── 카드 ── */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+        .card-head {
+            padding: 18px 20px 14px;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 14px;
+        }
+        .card-icon {
+            width: 42px; height: 42px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; flex-shrink: 0;
+        }
+        .card-head h2 { font-size: 1.05rem; font-weight: 700; margin-bottom: 2px; }
+        .card-head p { font-size: 0.82rem; color: var(--text-dim); }
+        .card-body { padding: 20px; }
+
+        /* ── 스텝 ── */
+        .steps { list-style: none; display: flex; flex-direction: column; gap: 16px; }
+        .step { display: flex; gap: 14px; align-items: flex-start; }
+        .step-num {
+            width: 30px; height: 30px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.82rem; font-weight: 700;
+            flex-shrink: 0; margin-top: 1px;
+        }
+        .step-body { flex: 1; }
+        .step-title { font-weight: 600; font-size: 0.95rem; margin-bottom: 4px; }
+        .step-desc { font-size: 0.85rem; color: var(--text-dim); line-height: 1.6; }
+        .step-desc strong { color: var(--text); }
+
+        /* ── 알림 박스 ── */
+        .alert {
+            border-radius: 10px;
+            padding: 13px 16px;
+            font-size: 0.85rem;
+            display: flex; gap: 10px; align-items: flex-start;
+            margin: 14px 0; line-height: 1.6;
+        }
+        .alert i { flex-shrink: 0; margin-top: 2px; }
+        .alert-warn  { background: rgba(245,158,11,0.1);  border: 1px solid rgba(245,158,11,0.25);  color: #fcd34d; }
+        .alert-info  { background: rgba(99,102,241,0.1);  border: 1px solid rgba(99,102,241,0.25);  color: #a5b4fc; }
+        .alert-success { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25); color: #6ee7b7; }
+        .alert-danger  { background: rgba(239,68,68,0.1);  border: 1px solid rgba(239,68,68,0.25);  color: #fca5a5; }
+
+        /* ── 흐름도 ── */
+        .flow { display: flex; flex-direction: column; gap: 0; margin: 14px 0; }
+        .flow-item { display: flex; align-items: stretch; gap: 0; }
+        .flow-left { display: flex; flex-direction: column; align-items: center; width: 40px; flex-shrink: 0; }
+        .flow-dot { width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; margin-top: 6px; }
+        .flow-line { width: 2px; flex: 1; background: var(--border); margin: 4px auto; }
+        .flow-content { flex: 1; padding: 6px 0 18px 4px; font-size: 0.87rem; }
+        .flow-content strong { font-size: 0.95rem; display: block; margin-bottom: 2px; }
+        .flow-content span { color: var(--text-dim); font-size: 0.82rem; }
+
+        /* ── 섹션 제목 ── */
+        .section-title {
+            font-size: 0.75rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1px;
+            color: var(--text-dim); margin: 28px 0 14px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* ── 인라인 코드 ── */
+        code {
+            background: rgba(255,255,255,0.08);
+            border-radius: 4px;
+            padding: 1px 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            color: #c084fc;
+        }
+
+        @media (max-width: 600px) {
+            .hero h1 { font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- 헤더 -->
+<header class="header">
+    <div class="header-inner">
+        <div class="header-logo">
+            <i class="fas fa-rocket"></i> 기사 앱 배포 가이드
+        </div>
+        <a href="index.html" class="header-back">
+            <i class="fas fa-arrow-left"></i> 홈으로
+        </a>
+    </div>
+</header>
+
+<!-- 히어로 -->
+<div class="hero">
+    <h1>🚛 화물운송 기사 앱<br><span>APK 다운로드</span></h1>
+    <p>GitHub Actions 자동 빌드 → 최신 APK 즉시 다운로드</p>
+</div>
+
+<!-- 본문 -->
+<div class="body-wrap">
+<div class="panel" id="panel-download">
+
+    <div class="alert alert-success">
+        <i class="fas fa-check-circle"></i>
+        <span>GitHub에 코드를 push하면 <strong>자동으로 APK가 빌드되어 Release에 업로드</strong>됩니다. 아래 버튼으로 최신 APK를 즉시 다운로드하세요.</span>
+    </div>
+
+    <!-- 메인 다운로드 버튼 -->
+    <div class="card" style="border:2px solid rgba(16,185,129,0.4); background:linear-gradient(135deg, #1e293b, #0f2d1e);">
+        <div class="card-body" style="text-align:center; padding:36px 20px;">
+            <div style="font-size:3rem; margin-bottom:12px;">📱</div>
+            <h2 style="font-size:1.3rem; font-weight:800; color:#fff; margin-bottom:6px;">화물운송 기사 앱</h2>
+            <p style="color:var(--text-dim); font-size:0.88rem; margin-bottom:8px;">Android 8.0 이상 / 백그라운드 GPS 지원</p>
+
+            <div id="apkStatus" style="margin-bottom:20px;">
+                <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);border-radius:8px;padding:8px 16px;font-size:0.82rem;color:var(--text);">
+                    ✅ 최신 버전: <strong>v1.0.0</strong> &nbsp;|&nbsp; 파일: <strong>app-debug.apk</strong> &nbsp;|&nbsp; 크기: <strong>6.25 MB</strong>
+                </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:10px;align-items:center;">
+                <a id="btnDirectDownload"
+                   href="https://github.com/rpaakdi1-spec/cargo-driver-app/releases/download/v1.0.0/app-debug.apk"
+                   target="_blank"
+                   style="display:inline-flex;align-items:center;gap:10px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;padding:14px 32px;border-radius:12px;text-decoration:none;font-size:1rem;font-weight:700;box-shadow:0 4px 20px rgba(16,185,129,0.4);transition:all 0.2s;">
+                    <i class="fas fa-download"></i> APK 다운로드 (v1.0.0)
+                </a>
+                <a href="https://github.com/rpaakdi1-spec/cargo-driver-app/releases/tag/v1.0.0"
+                   target="_blank"
+                   style="display:inline-flex;align-items:center;gap:8px;color:var(--text-dim);font-size:0.82rem;text-decoration:none;padding:6px 12px;border:1px solid rgba(255,255,255,0.08);border-radius:8px;">
+                    <i class="fab fa-github"></i> GitHub Release 페이지
+                </a>
+                <a href="release-upload-guide.html"
+                   style="display:inline-flex;align-items:center;gap:8px;color:#a5b4fc;font-size:0.82rem;text-decoration:none;padding:6px 12px;border:1px solid rgba(99,102,241,0.4);border-radius:8px;background:rgba(99,102,241,0.1);">
+                    <i class="fas fa-upload"></i> 새 버전 APK 업로드 방법
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 새 버전 업데이트 안내 -->
+    <div class="card" style="border:1px solid rgba(245,158,11,0.3);">
+        <div class="card-head">
+            <div class="card-icon" style="background:rgba(245,158,11,0.15);color:#f59e0b;">
+                <i class="fas fa-sync-alt"></i>
+            </div>
+            <div>
+                <h2>새 버전 APK를 올렸을 때 링크 업데이트 방법</h2>
+                <p>새 Release를 만든 후 이 페이지의 다운로드 링크를 수정하세요</p>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-warn">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>새 버전(예: v1.1.0)을 GitHub Release에 올렸다면, 아래 <strong>두 줄</strong>만 수정하면 됩니다.</span>
+            </div>
+            <p style="font-size:0.88rem; color:var(--text-dim); margin:12px 0 8px;">Genspark 에디터에서 <code>deploy-guide.html</code> 열고 Ctrl+F로 <code>app-debug.apk</code> 검색 → 아래 두 줄 교체:</p>
+            <div style="background:var(--code-bg);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:14px 16px;font-family:monospace;font-size:0.82rem;line-height:1.8;">
+                <div style="color:#6a9955;"><!-- 수정 전 --></div>
+                <div style="background:rgba(239,68,68,0.15);border-radius:4px;padding:2px 6px;color:#fca5a5;">href="...releases/download/<span style="font-weight:700;">v1.0.0</span>/app-debug.apk"</div>
+                <div style="color:#6a9955;margin-top:8px;"><!-- 수정 후 (새 버전으로 교체) --></div>
+                <div style="background:rgba(16,185,129,0.15);border-radius:4px;padding:2px 6px;color:#6ee7b7;">href="...releases/download/<span style="font-weight:700;">v1.1.0</span>/app-debug.apk"</div>
+                <div style="margin-top:10px;color:#fcd34d;">⬆ 버전 태그 부분(<span style="font-weight:700;">v1.0.0</span>)만 새 태그로 바꾸면 끝!</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 전체 흐름 -->
+    <p class="section-title"><i class="fas fa-route"></i> 자동 빌드 → 사이트 다운로드 전체 흐름</p>
+    <div class="card">
+        <div class="card-body">
+            <div class="flow">
+                <div class="flow-item">
+                    <div class="flow-left"><div class="flow-dot" style="background:#6366f1;"></div><div class="flow-line"></div></div>
+                    <div class="flow-content"><strong>1. GpsService.java 또는 기타 파일 수정</strong><span>GitHub 웹에서 직접 수정하거나 git push</span></div>
+                </div>
+                <div class="flow-item">
+                    <div class="flow-left"><div class="flow-dot" style="background:#f59e0b;"></div><div class="flow-line"></div></div>
+                    <div class="flow-content"><strong>2. GitHub Actions 자동 빌드 (5~7분)</strong><span>Actions 탭에서 🟡 → ✅ 완료 확인</span></div>
+                </div>
+                <div class="flow-item">
+                    <div class="flow-left"><div class="flow-dot" style="background:#10b981;"></div><div class="flow-line"></div></div>
+                    <div class="flow-content"><strong>3. GitHub Release에 APK 자동 게시</strong><span>영구 다운로드 URL 생성 (만료 없음)</span></div>
+                </div>
+                <div class="flow-item">
+                    <div class="flow-left"><div class="flow-dot" style="background:#10b981;"></div></div>
+                    <div class="flow-content"><strong>4. 이 페이지에서 바로 다운로드 → 기사님 전달</strong><span>위 "최신 APK 다운로드" 버튼 클릭</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 기사님 설치 -->
+    <p class="section-title"><i class="fas fa-mobile-alt"></i> 기사님 설치 방법 요약</p>
+    <div class="card">
+        <div class="card-body">
+            <ul class="steps">
+                <li class="step">
+                    <div class="step-num" style="background:rgba(16,185,129,0.2);color:#6ee7b7;">1</div>
+                    <div class="step-body"><div class="step-title">APK 다운로드 후 카카오톡으로 기사님께 전송</div><div class="step-desc">카카오톡 채팅 → 파일 첨부 → APK 파일 선택</div></div>
+                </li>
+                <li class="step">
+                    <div class="step-num" style="background:rgba(16,185,129,0.2);color:#6ee7b7;">2</div>
+                    <div class="step-body"><div class="step-title">기사님 폰: 카카오톡 파일 클릭 → "알 수 없는 출처 허용" → 설치</div><div class="step-desc">경고창 → 설정 → 이 출처 허용 ON → 뒤로가기 → 설치</div></div>
+                </li>
+                <li class="step">
+                    <div class="step-num" style="background:rgba(239,68,68,0.2);color:#fca5a5;">3</div>
+                    <div class="step-body"><div class="step-title">⚠️ 위치 권한 "항상 허용" 필수</div><div class="step-desc">설정 → 앱 → 화물운송 기사 → 권한 → 위치 → <strong>"항상 허용"</strong><br>배터리 → 앱별 배터리 관리 → 화물운송 기사 → <strong>"제한 없음"</strong></div></div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+</div><!-- /panel-download -->
+</div><!-- /body-wrap -->
+
+<script>
+// GitHub API 없이 직접 링크 사용 — API Rate Limit 문제 없음
+// 새 버전 출시 시: deploy-guide.html에서 v1.0.0 → 새 태그로 교체
+</script>
+</body>
+</html>

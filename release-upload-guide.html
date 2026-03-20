@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitHub Release APK 업로드 방법</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f172a; --bg2: #1e293b; --bg3: #334155; --border: #475569;
+      --text: #f1f5f9; --muted: #94a3b8;
+      --blue: #3b82f6; --blue-l: #60a5fa; --blue-bg: #1e3a5f;
+      --green: #22c55e; --green-bg: #052e16;
+      --yellow: #f59e0b; --yellow-bg: #451a03;
+      --red: #ef4444; --red-bg: #450a0a;
+      --cyan: #06b6d4; --purple: #a855f7;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;line-height:1.7}
+
+    header{background:linear-gradient(135deg,#0f172a,#1e3a5f,#1e293b);border-bottom:1px solid var(--border);padding:0 24px;position:sticky;top:0;z-index:100}
+    .hd{max-width:860px;margin:0 auto;display:flex;align-items:center;gap:10px;height:58px}
+    .back{display:flex;align-items:center;gap:6px;color:var(--muted);text-decoration:none;font-size:14px;padding:5px 12px;border:1px solid var(--border);border-radius:7px;transition:all .2s}
+    .back:hover{color:var(--text);border-color:var(--blue)}
+    .ht{font-size:17px;font-weight:700}
+
+    .hero{background:linear-gradient(135deg,#1e3a5f,#0f172a);padding:36px 24px 28px;text-align:center;border-bottom:1px solid var(--border)}
+    .hero h1{font-size:clamp(18px,4vw,26px);font-weight:700;margin-bottom:8px}
+    .hero p{color:var(--muted);font-size:14px}
+
+    .wrap{max-width:860px;margin:0 auto;padding:32px 20px 60px;display:flex;flex-direction:column;gap:24px}
+
+    /* 카드 */
+    .card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+    .card-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+    .step-num{width:34px;height:34px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0;color:#fff}
+    .step-num.green{background:var(--green)}
+    .step-num.yellow{background:var(--yellow);color:#000}
+    .step-num.red{background:var(--red)}
+    .card-head h3{font-size:16px;font-weight:600}
+    .card-head .sub{font-size:13px;color:var(--muted);margin-top:1px}
+    .card-body{padding:20px}
+
+    /* GitHub UI 시뮬 */
+    .gh-box{background:#0d1117;border:1px solid #30363d;border-radius:10px;overflow:hidden;margin:12px 0}
+    .gh-bar{background:#161b22;padding:8px 14px;border-bottom:1px solid #30363d;display:flex;align-items:center;gap:8px}
+    .dot{width:10px;height:10px;border-radius:50%}
+    .url-bar{flex:1;background:#21262d;border-radius:4px;padding:3px 10px;font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace}
+
+    /* 폼 필드 시뮬 */
+    .gh-form{padding:20px}
+    .gh-label{font-size:13px;font-weight:600;color:#c9d1d9;margin-bottom:6px}
+    .gh-input{width:100%;background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:8px 12px;color:#c9d1d9;font-size:14px;margin-bottom:14px;font-family:'JetBrains Mono',monospace}
+    .gh-textarea{width:100%;background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:8px 12px;color:#c9d1d9;font-size:13px;height:80px;resize:none;margin-bottom:14px}
+    .gh-drop{border:2px dashed #30363d;border-radius:8px;padding:24px;text-align:center;color:var(--muted);font-size:13px;margin-bottom:14px;cursor:pointer;transition:all .2s}
+    .gh-drop:hover,.gh-drop.hl{border-color:#58a6ff;background:rgba(88,166,255,.05)}
+    .gh-drop i{font-size:28px;color:#58a6ff;display:block;margin-bottom:8px}
+    .gh-drop strong{color:#58a6ff}
+    .gh-file-item{background:rgba(34,197,94,.08);border:1px solid var(--green);border-radius:6px;padding:8px 14px;font-size:13px;color:var(--green);display:flex;align-items:center;gap:8px;margin-bottom:8px}
+    .gh-btn{padding:8px 18px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;border:1px solid;display:inline-flex;align-items:center;gap:6px}
+    .gh-btn.green{background:#238636;border-color:#2ea043;color:#fff}
+    .gh-btn.outline{background:#21262d;border-color:#30363d;color:#c9d1d9}
+    .gh-btn.primary{background:#1f6feb;border-color:#388bfd;color:#fff}
+
+    /* 태그 입력 시뮬 */
+    .gh-tag-box{background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:12px 14px;margin-bottom:14px}
+    .gh-tag-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+    .gh-tag-input{flex:1;background:#161b22;border:1px solid #30363d;border-radius:4px;padding:5px 10px;color:#c9d1d9;font-size:13px;font-family:'JetBrains Mono',monospace}
+    .tag-chip{background:rgba(88,166,255,.15);border:1px solid #58a6ff;color:#58a6ff;padding:2px 8px;border-radius:20px;font-size:12px;font-family:'JetBrains Mono',monospace}
+    .tag-chip.new{background:rgba(34,197,94,.12);border-color:var(--green);color:var(--green)}
+
+    /* 정보 박스 */
+    .info{border-radius:8px;padding:12px 16px;display:flex;gap:10px;font-size:14px;margin:8px 0}
+    .info.blue{background:var(--blue-bg);border:1px solid var(--blue)}
+    .info.green{background:var(--green-bg);border:1px solid var(--green)}
+    .info.yellow{background:var(--yellow-bg);border:1px solid var(--yellow)}
+    .info.red{background:var(--red-bg);border:1px solid var(--red)}
+    .info i{margin-top:2px;flex-shrink:0}
+    .info.blue i{color:var(--blue-l)}
+    .info.green i{color:var(--green)}
+    .info.yellow i{color:var(--yellow)}
+    .info.red i{color:var(--red)}
+
+    /* 번호 리스트 */
+    .nlist{list-style:none;padding:0;display:flex;flex-direction:column;gap:10px}
+    .nlist li{display:flex;gap:10px;align-items:flex-start;font-size:14px}
+    .n{min-width:22px;height:22px;background:var(--blue);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:3px}
+    .nlist li code{background:var(--bg3);padding:1px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--cyan)}
+    .nlist li strong{color:var(--blue-l)}
+
+    /* 화살표 흐름 */
+    .flow{display:flex;align-items:center;gap:0;margin:14px 0;flex-wrap:wrap;justify-content:center}
+    .flow-step{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 16px;text-align:center;min-width:100px}
+    .flow-step .icon{font-size:22px;margin-bottom:4px}
+    .flow-step p{font-size:12px;color:var(--muted);margin-top:2px}
+    .flow-step h4{font-size:13px;font-weight:600}
+    .flow-arr{color:var(--muted);font-size:18px;padding:0 6px}
+
+    /* 경고 배지 */
+    .badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:700}
+    .badge.red{background:rgba(239,68,68,.15);border:1px solid var(--red);color:var(--red)}
+    .badge.green{background:rgba(34,197,94,.12);border:1px solid var(--green);color:var(--green)}
+    .badge.blue{background:rgba(59,130,246,.15);border:1px solid var(--blue);color:var(--blue-l)}
+
+    /* 구분선 */
+    hr{border:none;border-top:1px solid var(--border);margin:16px 0}
+
+    @media(max-width:600px){
+      .wrap{padding:20px 14px 40px}
+      .flow{gap:4px}
+      .flow-arr{font-size:14px;padding:0 2px}
+      .flow-step{min-width:80px;padding:10px 10px}
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="hd">
+    <a href="deploy-guide.html" class="back"><i class="fas fa-arrow-left"></i> 배포 가이드</a>
+    <div class="ht"><i class="fab fa-github" style="color:var(--blue-l)"></i> GitHub Release APK 업로드</div>
+  </div>
+</header>
+
+<div class="hero">
+  <h1>📦 GitHub Release에 APK 직접 업로드</h1>
+  <p>APK 파일을 수동으로 올려서 배포 가이드 페이지에서 바로 다운로드할 수 있게 합니다</p>
+</div>
+
+<div class="wrap">
+
+  <!-- 전체 흐름 -->
+  <div class="flow">
+    <div class="flow-step"><div class="icon">📱</div><h4>APK 파일 준비</h4><p>빌드된 .apk 파일</p></div>
+    <div class="flow-arr"><i class="fas fa-chevron-right"></i></div>
+    <div class="flow-step"><div class="icon">🏷️</div><h4>태그 입력</h4><p>예: v1.0.0</p></div>
+    <div class="flow-arr"><i class="fas fa-chevron-right"></i></div>
+    <div class="flow-step"><div class="icon">📝</div><h4>제목 입력</h4><p>릴리즈 이름</p></div>
+    <div class="flow-arr"><i class="fas fa-chevron-right"></i></div>
+    <div class="flow-step"><div class="icon">📎</div><h4>APK 첨부</h4><p>드래그 또는 선택</p></div>
+    <div class="flow-arr"><i class="fas fa-chevron-right"></i></div>
+    <div class="flow-step" style="border-color:var(--green)"><div class="icon">✅</div><h4>Publish!</h4><p>배포 완료</p></div>
+  </div>
+
+  <!-- STEP 1: 릴리즈 페이지 열기 -->
+  <div class="card">
+    <div class="card-head">
+      <div class="step-num">1</div>
+      <div><h3>GitHub Releases 페이지에서 "New release" 클릭</h3><div class="sub">github.com/rpaakdi1-spec/cargo-driver-app → Releases</div></div>
+    </div>
+    <div class="card-body">
+      <div class="gh-box">
+        <div class="gh-bar">
+          <span class="dot" style="background:#ef4444"></span>
+          <span class="dot" style="background:#f59e0b"></span>
+          <span class="dot" style="background:#22c55e"></span>
+          <span class="url-bar">github.com/rpaakdi1-spec/cargo-driver-app/releases/new</span>
+        </div>
+        <!-- 릴리즈 폼 UI -->
+        <div class="gh-form">
+
+          <!-- 태그 -->
+          <div class="gh-label">🏷️ Choose a tag <span style="color:var(--red)">*필수</span></div>
+          <div class="gh-tag-box">
+            <div class="gh-tag-row">
+              <input class="gh-tag-input" type="text" value="v1.0.0" readonly>
+              <span class="tag-chip new">+ Create new tag: v1.0.0</span>
+            </div>
+            <div style="font-size:12px;color:var(--muted)">
+              <i class="fas fa-info-circle" style="color:var(--blue-l)"></i>
+              태그가 없으면 직접 입력 → <strong style="color:#58a6ff">"+ Create new tag: v1.0.0 on publish"</strong> 클릭
+            </div>
+          </div>
+
+          <!-- 제목 -->
+          <div class="gh-label">📝 Release title <span style="color:var(--red)">*필수</span></div>
+          <input class="gh-input" type="text" value="v1.0.0 화물운송 기사 앱" readonly>
+
+          <!-- 설명 -->
+          <div class="gh-label">📋 Release notes <span style="color:var(--muted)">(선택)</span></div>
+          <textarea class="gh-textarea" readonly>- 초기 릴리즈
+- GPS 백그라운드 전송 지원
+- Android 8.0 이상</textarea>
+
+          <!-- 파일 첨부 -->
+          <div class="gh-label">📎 Attach APK 파일 <span style="color:var(--red)">*가장 중요!</span></div>
+          <div class="gh-drop hl">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <div><strong>APK 파일을 여기로 드래그</strong></div>
+            <div style="margin-top:4px">또는 <span style="color:#58a6ff;text-decoration:underline">파일 선택</span> 클릭</div>
+          </div>
+          <div class="gh-file-item">
+            <i class="fas fa-check-circle"></i>
+            cargo-driver-app.apk &nbsp;—&nbsp; 4.2 MB &nbsp;✅ 업로드 완료
+          </div>
+
+          <!-- 퍼블리시 버튼 -->
+          <div style="display:flex;gap:10px;margin-top:6px">
+            <button class="gh-btn green"><i class="fas fa-tag"></i> Publish release</button>
+            <button class="gh-btn outline">Save draft</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2: 태그 입력 상세 -->
+  <div class="card">
+    <div class="card-head">
+      <div class="step-num">2</div>
+      <div><h3>태그(Tag) 입력 방법</h3><div class="sub">태그가 없으면 새로 만들면 됩니다</div></div>
+    </div>
+    <div class="card-body">
+      <div class="info blue">
+        <i class="fas fa-tag"></i>
+        <div>태그는 버전 번호처럼 쓰는 이름표입니다. <strong>v1.0.0</strong> 형식을 추천합니다.<br>
+        릴리즈가 처음이면 <code>v1.0.0</code>, 두 번째 업데이트면 <code>v1.1.0</code> 이런 식으로 늘려가세요.</div>
+      </div>
+
+      <ul class="nlist" style="margin-top:14px">
+        <li><div class="n">①</div><p><strong>"Choose a tag"</strong> 드롭다운 클릭</p></li>
+        <li><div class="n">②</div><p>입력창에 <code>v1.0.0</code> 입력</p></li>
+        <li><div class="n">③</div><p>아래에 나타나는 <strong>"+ Create new tag: v1.0.0 on publish"</strong> 클릭</p></li>
+        <li><div class="n">④</div><p>태그가 선택됨 — <span class="tag-chip">v1.0.0</span> 표시 확인</p></li>
+      </ul>
+
+      <div class="info yellow" style="margin-top:12px">
+        <i class="fas fa-exclamation-triangle"></i>
+        <div>두 번째 업로드부터는 태그를 반드시 바꿔야 합니다.<br>
+        같은 태그가 있으면 덮어쓰기가 안 됩니다. <code>v1.0.0</code> → <code>v1.1.0</code> → <code>v1.2.0</code> …</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: APK 파일 첨부 -->
+  <div class="card">
+    <div class="card-head">
+      <div class="step-num" style="background:var(--green)">3</div>
+      <div><h3>APK 파일 첨부 — 핵심!</h3><div class="sub">"Attach binaries" 영역에 파일 드래그 또는 클릭해서 선택</div></div>
+    </div>
+    <div class="card-body">
+
+      <div class="info red" style="margin-bottom:14px">
+        <i class="fas fa-exclamation-circle"></i>
+        <div><strong>이 단계를 빠뜨리면 배포 가이드 페이지에서 APK를 다운로드할 수 없습니다!</strong><br>
+        반드시 .apk 파일을 첨부하고 Publish 하세요.</div>
+      </div>
+
+      <ul class="nlist">
+        <li><div class="n">①</div><p>폼 하단 <strong>"Attach binaries by dropping them here or selecting them."</strong> 영역 찾기</p></li>
+        <li><div class="n">②</div><p>
+          <strong>방법 A)</strong> APK 파일을 그 영역으로 <strong>드래그 앤 드롭</strong><br>
+          <strong>방법 B)</strong> 영역 클릭 → 파일 탐색기에서 <strong>.apk 파일 선택</strong>
+        </p></li>
+        <li><div class="n">③</div><p>업로드 중… 진행바 표시 → <strong>파일명과 용량이 표시되면 완료</strong></p></li>
+      </ul>
+
+      <div class="gh-box" style="margin-top:14px">
+        <div class="gh-bar">
+          <span class="dot" style="background:#ef4444"></span>
+          <span class="dot" style="background:#f59e0b"></span>
+          <span class="dot" style="background:#22c55e"></span>
+          <span class="url-bar">Attach binaries 영역</span>
+        </div>
+        <div style="padding:14px 18px">
+          <!-- 업로드 전 -->
+          <div style="border:2px dashed #30363d;border-radius:8px;padding:20px;text-align:center;color:var(--muted);font-size:13px;margin-bottom:12px">
+            <i class="fas fa-paperclip" style="font-size:24px;color:#58a6ff;display:block;margin-bottom:6px"></i>
+            Attach binaries by dropping them here or selecting them.
+          </div>
+          <!-- 업로드 후 -->
+          <div style="background:rgba(34,197,94,.08);border:1px solid var(--green);border-radius:6px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+            <div style="display:flex;align-items:center;gap:8px;font-size:13px">
+              <i class="fas fa-file-archive" style="color:var(--green)"></i>
+              <span style="color:var(--green);font-weight:600">cargo-driver-app.apk</span>
+              <span style="color:var(--muted)">4.2 MB</span>
+            </div>
+            <span class="badge green"><i class="fas fa-check"></i> 업로드 완료</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="info blue" style="margin-top:8px">
+        <i class="fas fa-lightbulb"></i>
+        <div>APK 파일 이름은 자유롭게 지어도 됩니다.<br>
+        예: <code>cargo-driver-v1.0.0.apk</code>, <code>기사앱.apk</code>, <code>CargoDriver.apk</code> 모두 가능합니다.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4: Publish -->
+  <div class="card">
+    <div class="card-head">
+      <div class="step-num" style="background:var(--green)">4</div>
+      <div><h3>Publish release 클릭 → 완료!</h3><div class="sub">초록색 버튼 클릭으로 배포 완료</div></div>
+    </div>
+    <div class="card-body">
+      <ul class="nlist">
+        <li><div class="n">①</div><p>태그, 제목, APK 파일 첨부 확인</p></li>
+        <li><div class="n">②</div><p>초록색 <strong>"Publish release"</strong> 버튼 클릭</p></li>
+        <li><div class="n">③</div><p>Releases 페이지로 이동 — APK 다운로드 링크 확인 가능</p></li>
+        <li><div class="n">④</div><p><strong>배포 가이드 페이지</strong>로 돌아가서 "최신 버전 확인" 클릭 → 자동으로 최신 APK 감지!</p></li>
+      </ul>
+
+      <div class="info green" style="margin-top:14px">
+        <i class="fas fa-check-circle"></i>
+        <div><strong>완료 후 확인:</strong> github.com/rpaakdi1-spec/cargo-driver-app/releases 접속<br>
+        업로드한 APK가 <i class="fas fa-file-archive"></i> 아이콘과 함께 보이면 성공입니다!</div>
+      </div>
+
+      <hr>
+
+      <div style="text-align:center;margin-top:8px">
+        <a href="deploy-guide.html"
+           style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;padding:12px 28px;border-radius:10px;text-decoration:none;font-size:15px;font-weight:700;box-shadow:0 4px 16px rgba(16,185,129,.4)">
+          <i class="fas fa-download"></i> 배포 가이드에서 APK 다운로드 확인
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="card">
+    <div class="card-head">
+      <div class="step-num" style="background:var(--bg3);color:var(--text)"><i class="fas fa-question"></i></div>
+      <div><h3>자주 묻는 질문</h3></div>
+    </div>
+    <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+
+      <div style="border-bottom:1px solid var(--border);padding-bottom:14px">
+        <p style="font-weight:600;margin-bottom:6px;color:var(--yellow)"><i class="fas fa-question-circle"></i> APK 파일이 없는데 어떻게 만드나요?</p>
+        <p style="font-size:14px;color:var(--muted)">GitHub Actions로 자동 빌드하거나, Android Studio에서 직접 빌드합니다.<br>
+        Actions 자동 빌드: 코드를 push하면 약 5~7분 후 <code>Actions 탭 → Artifacts</code>에서 APK를 다운로드할 수 있습니다.<br>
+        그 APK 파일을 받아서 여기서 Release에 첨부하면 됩니다.</p>
+      </div>
+
+      <div style="border-bottom:1px solid var(--border);padding-bottom:14px">
+        <p style="font-weight:600;margin-bottom:6px;color:var(--yellow)"><i class="fas fa-question-circle"></i> 배포 가이드에서 "APK를 찾을 수 없습니다"가 떠요</p>
+        <p style="font-size:14px;color:var(--muted)">Release에 APK 파일이 첨부되지 않은 경우입니다.<br>
+        해당 Release를 열어서 <strong>Edit release → 파일 다시 첨부 → Update release</strong>로 수정하세요.</p>
+      </div>
+
+      <div style="border-bottom:1px solid var(--border);padding-bottom:14px">
+        <p style="font-weight:600;margin-bottom:6px;color:var(--yellow)"><i class="fas fa-question-circle"></i> 새 버전을 올리려면 어떻게 하나요?</p>
+        <p style="font-size:14px;color:var(--muted)">새 Release를 만들면 됩니다. 태그를 <code>v1.1.0</code>으로 올려서 새 Release를 만들고 새 APK를 첨부하세요.<br>
+        배포 가이드 페이지는 항상 <strong>가장 최신 Release</strong>의 APK를 자동으로 표시합니다.</p>
+      </div>
+
+      <div>
+        <p style="font-weight:600;margin-bottom:6px;color:var(--yellow)"><i class="fas fa-question-circle"></i> "Set as pre-release" 체크해야 하나요?</p>
+        <p style="font-size:14px;color:var(--muted)">체크하지 마세요. pre-release로 표시하면 배포 가이드의 <code>releases/latest</code> API에서 감지되지 않습니다.<br>
+        기본값(체크 안 함)으로 두고 Publish 하세요.</p>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+</body>
+</html>

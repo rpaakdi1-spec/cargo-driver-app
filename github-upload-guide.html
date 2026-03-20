@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitHub 파일 업로드 가이드</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f172a; --bg2: #1e293b; --bg3: #334155; --border: #475569;
+      --text: #f1f5f9; --muted: #94a3b8;
+      --blue: #3b82f6; --blue-light: #60a5fa; --blue-bg: #1e3a5f;
+      --green: #22c55e; --green-bg: #052e16;
+      --yellow: #f59e0b; --yellow-bg: #451a03;
+      --red: #ef4444; --red-bg: #450a0a;
+      --purple: #a855f7; --cyan: #06b6d4;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; line-height: 1.7; }
+
+    /* 헤더 */
+    header {
+      background: linear-gradient(135deg, #0f172a, #1e3a5f 50%, #1e293b);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px; position: sticky; top: 0; z-index: 100;
+    }
+    .header-inner { max-width: 960px; margin: 0 auto; display: flex; align-items: center; gap: 12px; height: 60px; }
+    .back-btn {
+      display: flex; align-items: center; gap: 6px; color: var(--muted);
+      text-decoration: none; font-size: 14px; padding: 6px 12px;
+      border: 1px solid var(--border); border-radius: 8px; transition: all .2s; white-space: nowrap;
+    }
+    .back-btn:hover { color: var(--text); border-color: var(--blue); }
+    .header-title { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+
+    /* 히어로 */
+    .hero {
+      background: linear-gradient(135deg, #1e3a5f, #0f172a);
+      padding: 36px 24px 28px; text-align: center; border-bottom: 1px solid var(--border);
+    }
+    .hero h1 { font-size: clamp(18px, 4vw, 26px); font-weight: 700; margin-bottom: 8px; }
+    .hero p { color: var(--muted); font-size: 14px; max-width: 580px; margin: 0 auto; }
+
+    /* 탭 */
+    .tab-nav { background: var(--bg2); border-bottom: 2px solid var(--border); overflow-x: auto; }
+    .tab-inner { display: flex; max-width: 960px; margin: 0 auto; min-width: max-content; }
+    .tab-btn {
+      padding: 13px 20px; background: none; border: none; border-bottom: 3px solid transparent;
+      color: var(--muted); cursor: pointer; font-size: 14px; font-weight: 500;
+      white-space: nowrap; transition: all .2s; display: flex; align-items: center; gap: 7px;
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--blue-light); border-bottom-color: var(--blue); }
+
+    /* 본문 */
+    .wrap { max-width: 960px; margin: 0 auto; padding: 32px 20px 60px; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    /* 스텝 카드 */
+    .step-wrap { display: flex; flex-direction: column; gap: 20px; }
+    .step-card {
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+    }
+    .step-head {
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .step-circle {
+      width: 36px; height: 36px; border-radius: 50%; background: var(--blue);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 16px; flex-shrink: 0; color: #fff;
+    }
+    .step-head h3 { font-size: 16px; font-weight: 600; }
+    .step-head .sub { color: var(--muted); font-size: 13px; margin-top: 1px; }
+    .step-body { padding: 20px; }
+
+    /* 이미지 모크업 */
+    .mockup {
+      background: #0d1117; border: 1px solid var(--border); border-radius: 10px;
+      overflow: hidden; margin: 12px 0;
+    }
+    .mockup-bar {
+      background: #161b22; padding: 8px 14px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .mockup-bar .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .mockup-bar .dot.r { background: #ef4444; }
+    .mockup-bar .dot.y { background: #f59e0b; }
+    .mockup-bar .dot.g { background: #22c55e; }
+    .mockup-bar .url-bar {
+      flex: 1; background: var(--bg3); border-radius: 5px; padding: 4px 10px;
+      font-size: 12px; color: var(--muted); font-family: 'JetBrains Mono', monospace;
+    }
+    .mockup-content { padding: 0; }
+
+    /* GitHub UI 시뮬레이션 */
+    .gh-repo-header {
+      background: #161b22; padding: 14px 18px; border-bottom: 1px solid #30363d;
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .gh-repo-name { color: #58a6ff; font-size: 15px; font-weight: 600; }
+    .gh-repo-slash { color: var(--muted); font-size: 15px; }
+    .gh-public-badge {
+      border: 1px solid #444; color: var(--muted); padding: 1px 8px; border-radius: 20px; font-size: 11px;
+    }
+    .gh-breadcrumb {
+      background: #161b22; padding: 10px 18px; border-bottom: 1px solid #30363d;
+      font-size: 13px; color: #58a6ff; display: flex; align-items: center; gap: 6px;
+    }
+    .gh-file-table { width: 100%; }
+    .gh-file-row {
+      padding: 8px 18px; border-bottom: 1px solid #21262d;
+      display: flex; align-items: center; gap: 10px; font-size: 13px;
+    }
+    .gh-file-row:last-child { border-bottom: none; }
+    .gh-file-row i { color: var(--muted); width: 16px; }
+    .gh-file-row.folder i { color: #58a6ff; }
+    .gh-file-row .name { color: #58a6ff; flex: 1; }
+    .gh-file-row .time { color: var(--muted); font-size: 12px; }
+    .gh-btn-bar {
+      padding: 10px 18px; border-bottom: 1px solid #30363d;
+      display: flex; align-items: center; gap: 8px; justify-content: flex-end;
+    }
+    .gh-btn {
+      padding: 5px 14px; border-radius: 6px; font-size: 13px; font-weight: 600;
+      cursor: pointer; border: 1px solid;
+    }
+    .gh-btn.green { background: #238636; border-color: #2ea043; color: #fff; }
+    .gh-btn.outline { background: #21262d; border-color: #30363d; color: #c9d1d9; }
+    .gh-btn.primary { background: #1f6feb; border-color: #388bfd; color: #fff; }
+    .gh-drop-zone {
+      margin: 14px 18px; border: 2px dashed #30363d; border-radius: 8px;
+      padding: 32px; text-align: center; color: var(--muted); font-size: 14px;
+    }
+    .gh-drop-zone i { font-size: 32px; display: block; margin-bottom: 8px; color: #58a6ff; }
+    .gh-drop-zone strong { color: #58a6ff; }
+    .gh-commit-box { padding: 14px 18px; }
+    .gh-commit-input {
+      width: 100%; background: #0d1117; border: 1px solid #30363d; border-radius: 6px;
+      padding: 8px 12px; color: var(--text); font-size: 14px; margin-bottom: 8px;
+    }
+    .gh-commit-desc {
+      width: 100%; background: #0d1117; border: 1px solid #30363d; border-radius: 6px;
+      padding: 8px 12px; color: var(--text); font-size: 13px; height: 60px; resize: none;
+    }
+
+    /* 정보 박스 */
+    .info { border-radius: 8px; padding: 12px 16px; margin: 10px 0; display: flex; gap: 10px; font-size: 14px; }
+    .info.blue { background: var(--blue-bg); border: 1px solid var(--blue); }
+    .info.green { background: var(--green-bg); border: 1px solid var(--green); }
+    .info.yellow { background: var(--yellow-bg); border: 1px solid var(--yellow); }
+    .info.red { background: var(--red-bg); border: 1px solid var(--red); }
+    .info i { margin-top: 2px; flex-shrink: 0; }
+    .info.blue i { color: var(--blue-light); }
+    .info.green i { color: var(--green); }
+    .info.yellow i { color: var(--yellow); }
+    .info.red i { color: var(--red); }
+
+    /* 파일 트리 */
+    .file-tree {
+      background: #0d1117; border: 1px solid var(--border); border-radius: 8px;
+      padding: 16px 20px; font-family: 'JetBrains Mono', monospace; font-size: 13px;
+      line-height: 2;
+    }
+    .file-tree .folder { color: var(--blue-light); }
+    .file-tree .file { color: #e2e8f0; }
+    .file-tree .file.hl { color: var(--yellow); font-weight: 600; }
+    .file-tree .comment { color: var(--muted); }
+
+    /* 배지 */
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; }
+    .badge.blue { background: rgba(59,130,246,.15); border: 1px solid var(--blue); color: var(--blue-light); }
+    .badge.green { background: rgba(34,197,94,.12); border: 1px solid var(--green); color: var(--green); }
+    .badge.yellow { background: rgba(245,158,11,.15); border: 1px solid var(--yellow); color: var(--yellow); }
+    .badge.red { background: rgba(239,68,68,.15); border: 1px solid var(--red); color: var(--red); }
+
+    /* 번호 목록 */
+    .num-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+    .num-list li { display: flex; gap: 12px; align-items: flex-start; font-size: 14px; }
+    .num-list .n {
+      min-width: 24px; height: 24px; background: var(--blue); color: #fff;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; flex-shrink: 0; margin-top: 2px;
+    }
+    .num-list li p { margin: 0; }
+    .num-list li code {
+      background: var(--bg3); padding: 1px 6px; border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--cyan);
+    }
+    .num-list li strong { color: var(--blue-light); }
+
+    /* 파일 경로 칩 */
+    .path-chip {
+      background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+      padding: 6px 12px; font-family: 'JetBrains Mono', monospace; font-size: 12px;
+      color: var(--cyan); display: inline-flex; align-items: center; gap: 6px; margin: 4px 0;
+    }
+    .path-chip i { color: var(--yellow); }
+
+    /* 체크리스트 */
+    .checklist { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+    .checklist li {
+      display: flex; align-items: flex-start; gap: 10px; font-size: 14px;
+      padding: 10px 14px; background: rgba(255,255,255,.03); border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .checklist li i.fa-check-circle { color: var(--green); margin-top: 2px; }
+    .checklist li i.fa-times-circle { color: var(--red); margin-top: 2px; }
+    .checklist li i.fa-exclamation-circle { color: var(--yellow); margin-top: 2px; }
+
+    /* 구분선 */
+    hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+    /* 토스트 */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+      background: var(--bg2); border: 1px solid var(--green); color: var(--green);
+      padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 600;
+      opacity: 0; transition: opacity .3s; pointer-events: none;
+    }
+    #toast.show { opacity: 1; }
+
+    @media (max-width: 640px) {
+      .wrap { padding: 20px 14px 40px; }
+      .tab-btn { padding: 11px 12px; font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- 헤더 -->
+<header>
+  <div class="header-inner">
+    <a href="deploy-guide.html" class="back-btn"><i class="fas fa-arrow-left"></i> 배포 가이드</a>
+    <div class="header-title">
+      <i class="fab fa-github" style="color:var(--blue-light)"></i>
+      GitHub 파일 업로드 가이드
+    </div>
+  </div>
+</header>
+
+<!-- 히어로 -->
+<div class="hero">
+  <h1>📤 GitHub에 파일 업로드하는 방법</h1>
+  <p>Git 설치 없이 브라우저만으로 GitHub에 파일을 올리는 3가지 방법을 단계별로 설명합니다.</p>
+</div>
+
+<!-- 탭 -->
+<nav class="tab-nav">
+  <div class="tab-inner">
+    <button class="tab-btn active" onclick="go('a')"><i class="fas fa-mouse-pointer"></i> 방법 1 — 드래그&드롭</button>
+    <button class="tab-btn" onclick="go('b')"><i class="fas fa-file-alt"></i> 방법 2 — 파일 직접 생성</button>
+    <button class="tab-btn" onclick="go('c')"><i class="fas fa-folder-open"></i> 방법 3 — 폴더째 업로드</button>
+    <button class="tab-btn" onclick="go('d')"><i class="fas fa-list-check"></i> 업로드 후 확인</button>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<!-- ═══════════════════════════════════════ -->
+<!-- 방법 1 — 드래그 & 드롭                    -->
+<!-- ═══════════════════════════════════════ -->
+<div id="panel-a" class="panel active">
+
+  <div class="info blue" style="margin-bottom:20px">
+    <i class="fas fa-star"></i>
+    <div><strong>가장 쉬운 방법.</strong> 파일을 그냥 브라우저 창으로 끌어다 놓으면 끝입니다.<br>
+    여러 파일을 한꺼번에 올릴 수 있습니다.</div>
+  </div>
+
+  <div class="step-wrap">
+
+    <!-- STEP 1 -->
+    <div class="step-card">
+      <div class="step-head">
+        <div class="step-circle">1</div>
+        <div>
+          <h3>저장소 열기</h3>
+          <div class="sub">github.com에서 업로드할 폴더로 이동</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <ul class="num-list">
+          <li><div class="n">①</div><p><strong>github.com</strong> 접속 → 로그인</p></li>
+          <li><div class="n">②</div><p>저장소 <strong>rpaakdi1-spec / cargo-driver-app</strong> 클릭</p></li>
+          <li><div class="n">③</div><p>파일을 올릴 <strong>폴더로 이동</strong><br>
+            <span style="color:var(--muted);font-size:13px">예) android/app/src/main/java/com/cargo/driver/ 폴더로 들어가기</span>
+          </p></li>
+        </ul>
+
+        <!-- GitHub UI 모크업 -->
+        <div class="mockup" style="margin-top:16px">
+          <div class="mockup-bar">
+            <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+            <span class="url-bar">github.com/rpaakdi1-spec/cargo-driver-app</span>
+          </div>
+          <div class="gh-repo-header">
+            <span class="gh-repo-name">rpaakdi1-spec</span>
+            <span class="gh-repo-slash">/</span>
+            <span class="gh-repo-name">cargo-driver-app</span>
+            <span class="gh-public-badge">Public</span>
+          </div>
+          <div class="gh-breadcrumb">
+            <i class="fas fa-folder" style="color:var(--blue-light)"></i>
+            android / app / src / main / java / com / cargo / driver
+          </div>
+          <div class="gh-file-table">
+            <div class="gh-file-row folder"><i class="fas fa-folder"></i><span class="name">..</span><span class="time">상위 폴더</span></div>
+            <div class="gh-file-row"><i class="fas fa-file-code"></i><span class="name">GpsService.java</span><span class="time">2 days ago</span></div>
+            <div class="gh-file-row"><i class="fas fa-file-code"></i><span class="name">MainActivity.java</span><span class="time">2 days ago</span></div>
+            <div class="gh-file-row"><i class="fas fa-file-code"></i><span class="name">WebAppInterface.java</span><span class="time">2 days ago</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="step-card">
+      <div class="step-head">
+        <div class="step-circle">2</div>
+        <div>
+          <h3>Add file → Upload files 클릭</h3>
+          <div class="sub">폴더 화면 오른쪽 상단 버튼</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="mockup">
+          <div class="mockup-bar">
+            <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+            <span class="url-bar">github.com/rpaakdi1-spec/cargo-driver-app/tree/main/android</span>
+          </div>
+          <div class="gh-btn-bar" style="justify-content:space-between;align-items:center">
+            <span style="font-size:13px;color:var(--muted)">android /</span>
+            <div style="display:flex;gap:8px">
+              <button class="gh-btn outline"><i class="fas fa-code"></i> Code</button>
+              <!-- 핵심 버튼 강조 -->
+              <button class="gh-btn green" style="box-shadow:0 0 0 3px rgba(34,197,94,.4)">
+                <i class="fas fa-plus"></i> Add file ▾
+              </button>
+            </div>
+          </div>
+          <!-- 드롭다운 -->
+          <div style="background:#161b22;border:1px solid #30363d;border-radius:6px;margin:0 18px 14px;width:160px;margin-left:auto;margin-right:18px">
+            <div style="padding:8px 14px;font-size:13px;color:#c9d1d9;border-bottom:1px solid #21262d">
+              <i class="fas fa-plus" style="color:var(--green)"></i> Create new file
+            </div>
+            <div style="padding:8px 14px;font-size:13px;color:#58a6ff;background:rgba(88,166,255,.1)">
+              <i class="fas fa-upload" style="color:var(--blue-light)"></i> <strong>Upload files</strong> ← 이거!
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="step-card">
+      <div class="step-head">
+        <div class="step-circle">3</div>
+        <div>
+          <h3>파일을 드래그해서 놓기</h3>
+          <div class="sub">점선 박스 안으로 파일을 끌어다 놓거나, "choose your files" 클릭</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="mockup">
+          <div class="mockup-bar">
+            <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+            <span class="url-bar">github.com/rpaakdi1-spec/cargo-driver-app/upload/main/android</span>
+          </div>
+          <div class="gh-drop-zone">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <div><strong>Drag files here to add them to your repository</strong></div>
+            <div style="margin-top:6px;font-size:13px">or <span style="color:#58a6ff;text-decoration:underline">choose your files</span></div>
+          </div>
+          <!-- 파일이 올라간 모습 -->
+          <div style="padding:0 18px 10px">
+            <div style="background:rgba(34,197,94,.08);border:1px solid var(--green);border-radius:6px;padding:8px 12px;font-size:13px;color:var(--green);display:flex;align-items:center;gap:8px">
+              <i class="fas fa-check-circle"></i>
+              GpsService.java — 업로드 완료 (7.2 KB)
+            </div>
+          </div>
+        </div>
+
+        <div class="info yellow" style="margin-top:12px">
+          <i class="fas fa-exclamation-triangle"></i>
+          <div><strong>주의:</strong> 이미 같은 이름의 파일이 있으면 덮어씁니다.<br>
+          업로드 전에 기존 내용을 백업하고 싶다면 먼저 파일 내용을 복사해두세요.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="step-card">
+      <div class="step-head">
+        <div class="step-circle">4</div>
+        <div>
+          <h3>커밋 메시지 입력 후 저장</h3>
+          <div class="sub">페이지 아래 "Commit changes" 영역</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="mockup">
+          <div class="mockup-bar">
+            <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+            <span class="url-bar">github.com/…/upload</span>
+          </div>
+          <div class="gh-commit-box">
+            <p style="font-size:13px;color:var(--muted);margin-bottom:8px">Commit changes</p>
+            <input class="gh-commit-input" type="text" value="GpsService.java 업로드" readonly>
+            <textarea class="gh-commit-desc" readonly>GPS 주기 수정 후 재업로드</textarea>
+            <div style="margin-top:10px">
+              <button class="gh-btn primary" style="width:100%;padding:8px">
+                <i class="fas fa-check"></i> Commit changes
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <ul class="num-list" style="margin-top:16px">
+          <li><div class="n">①</div><p>첫 번째 칸: <strong>간단한 설명</strong> 입력 (예: <code>GpsService GPS 주기 10초로 변경</code>)</p></li>
+          <li><div class="n">②</div><p>두 번째 칸: 상세 설명 (선택, 비워도 됨)</p></li>
+          <li><div class="n">③</div><p><strong>"Commit changes"</strong> 초록 버튼 클릭</p></li>
+          <li><div class="n">④</div><p>자동으로 Actions 탭에서 APK 빌드 시작 (약 5~7분)</p></li>
+        </ul>
+      </div>
+    </div>
+
+  </div><!-- /step-wrap -->
+</div><!-- /panel-a -->
+
+
+<!-- ═══════════════════════════════════════ -->
+<!-- 방법 2 — 파일 직접 생성                   -->
+<!-- ═══════════════════════════════════════ -->
+<div id="panel-b" class="panel">
+
+  <div class="info blue" style="margin-bottom:20px">
+    <i class="fas fa-info-circle"></i>
+    <div>파일을 새로 만들거나, 내용 전체를 복사해서 붙여넣을 때 사용합니다.<br>
+    파일이 없는 새 경로에 파일을 만들 때도 이 방법을 씁니다.</div>
+  </div>
+
+  <div class="step-wrap">
+
+    <div class="step-card">
+      <div class="step-head">
+        <div class="step-circle">1</div>
+        <div>
+          <h3>Add file → Create new file</h3>
+          <div class="sub">저장소 아무 폴더에서나 가능</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <ul class="num-list">
+          <li><div class="n">①</div><p>저장소 메인 또는 원하는 폴더 이동</p></li>
+          <li><div class="n">②</div><p><strong>Add file</strong> 버튼 → <strong>Create new file</strong> 클릭</p></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-head">
+        <div class="step-circle">2</div>
+        <div>
+          <h3>파일 이름에 경로 포함해서 입력</h3>
+          <div class="sub">슬래시(/)를 입력하면 자동으로 폴더가 생성됩니다</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="mockup">
+          <div class="mockup-bar">
+            <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+            <span class="url-bar">github.com/rpaakdi1-spec/cargo-driver-app/new/main</span>
+          </div>
+          <div style="padding:16px 18px;background:#0d1117">
+            <div style="display:flex;align-items:center;gap:4px;font-size:13px;margin-bottom:12px">
+              <span style="color:#58a6ff">cargo-driver-app</span>
+              <span style="color:var(--muted)">/</span>
+              <!-- 경로 입력 강조 -->
+              <span style="background:rgba(88,166,255,.15);border:1px solid #58a6ff;border-radius:4px;padding:3px 10px;color:#58a6ff;font-family:'JetBrains Mono',monospace;font-size:13px">
+                android/app/src/main/java/com/cargo/driver/GpsService.java
+              </span>
+            </div>
+            <p style="font-size:12px;color:var(--muted)">
+              💡 슬래시(/)를 입력하면 폴더가 자동 생성됩니다.<br>
+              예: <code style="background:var(--bg3);padding:1px 5px;border-radius:3px;color:var(--cyan)">android/</code> 입력 → android 폴더 생성
+            </p>
+          </div>
+        </div>
+
+        <div class="info green" style="margin-top:8px">
+          <i class="fas fa-lightbulb"></i>
+          <div>파일 이름 칸에 <strong>경로/파일명</strong> 전체를 입력하면 됩니다.<br>
+          예: <code>android/app/src/main/java/com/cargo/driver/GpsService.java</code></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-head">
+        <div class="step-circle">3</div>
+        <div>
+          <h3>내용 붙여넣기</h3>
+          <div class="sub">아래 파일별 전체 코드를 복사해서 에디터에 붙여넣기</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="mockup">
+          <div class="mockup-bar">
+            <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+            <span class="url-bar">github.com/…/new/main</span>
+          </div>
+          <div style="background:#0d1117;padding:12px 18px;min-height:120px;border-bottom:1px solid #30363d">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#e2e8f0;line-height:1.8">
+              <div style="color:#6b7280">  1  </div>
+              <div><span style="color:#6b7280">  2  </span> <span style="color:#93c5fd">package</span> <span style="color:#86efac">com.cargo.driver</span>;</div>
+              <div><span style="color:#6b7280">  3  </span></div>
+              <div><span style="color:#6b7280">  4  </span> <span style="color:#93c5fd">import</span> android.app.Service;</div>
+              <div style="color:#6b7280;font-style:italic">  5  ... (코드 계속)</div>
+            </div>
+          </div>
+          <div style="padding:10px 18px;background:#161b22;font-size:12px;color:var(--muted)">
+            Ctrl+A로 전체 선택 후 Ctrl+V로 붙여넣기
+          </div>
+        </div>
+
+        <div class="info yellow" style="margin-top:12px">
+          <i class="fas fa-exclamation-triangle"></i>
+          <div>기존 파일을 수정할 때는 이 방법보다 <strong>파일 직접 열어서 연필 아이콘 클릭</strong>이 더 편합니다.<br>
+          이 방법은 <strong>완전히 새 파일</strong>을 만들 때 주로 사용하세요.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /panel-b -->
+
+
+<!-- ═══════════════════════════════════════ -->
+<!-- 방법 3 — 폴더째 업로드                    -->
+<!-- ═══════════════════════════════════════ -->
+<div id="panel-c" class="panel">
+
+  <div class="info blue" style="margin-bottom:20px">
+    <i class="fas fa-folder-open"></i>
+    <div>android 폴더 전체를 처음 업로드하거나, 여러 폴더를 한 번에 올릴 때 사용합니다.</div>
+  </div>
+
+  <div class="step-wrap">
+
+    <div class="step-card">
+      <div class="step-head">
+        <div class="step-circle">1</div>
+        <div>
+          <h3>저장소 루트(최상단)에서 시작</h3>
+          <div class="sub">폴더 구조 그대로 유지됩니다</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <ul class="num-list">
+          <li><div class="n">①</div><p>저장소 첫 페이지(루트) 이동<br>
+            <span class="path-chip"><i class="fas fa-link"></i>github.com/rpaakdi1-spec/cargo-driver-app</span>
+          </p></li>
+          <li><div class="n">②</div><p><strong>Add file → Upload files</strong> 클릭</p></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-head">
+        <div class="step-circle">2</div>
+        <div>
+          <h3>폴더를 드래그해서 놓기</h3>
+          <div class="sub">파일 탐색기에서 폴더 자체를 끌어다 놓으면 됩니다</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="mockup">
+          <div class="mockup-bar">
+            <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+            <span class="url-bar">github.com/rpaakdi1-spec/cargo-driver-app/upload/main</span>
+          </div>
+          <div class="gh-drop-zone" style="border-color:#58a6ff;background:rgba(88,166,255,.05)">
+            <i class="fas fa-folder-open" style="color:#58a6ff"></i>
+            <div style="color:#58a6ff"><strong>폴더를 여기로 드래그</strong></div>
+            <div style="margin-top:6px;font-size:13px;color:var(--muted)">android 폴더 전체를 끌어다 놓기</div>
+          </div>
+          <div style="padding:0 18px 12px;display:flex;flex-direction:column;gap:6px">
+            <div style="background:rgba(34,197,94,.08);border:1px solid var(--green);border-radius:6px;padding:6px 12px;font-size:12px;color:var(--green);display:flex;align-items:center;gap:8px">
+              <i class="fas fa-check-circle"></i> android/app/build.gradle
+            </div>
+            <div style="background:rgba(34,197,94,.08);border:1px solid var(--green);border-radius:6px;padding:6px 12px;font-size:12px;color:var(--green);display:flex;align-items:center;gap:8px">
+              <i class="fas fa-check-circle"></i> android/app/src/main/AndroidManifest.xml
+            </div>
+            <div style="background:rgba(34,197,94,.08);border:1px solid var(--green);border-radius:6px;padding:6px 12px;font-size:12px;color:var(--green);display:flex;align-items:center;gap:8px">
+              <i class="fas fa-check-circle"></i> android/app/src/main/java/com/cargo/driver/GpsService.java
+            </div>
+            <div style="color:var(--muted);font-size:12px;padding-left:4px">+ 8개 파일 더...</div>
+          </div>
+        </div>
+
+        <div class="info green" style="margin-top:12px">
+          <i class="fas fa-check-circle"></i>
+          <div>폴더를 드래그하면 <strong>하위 파일 모두 자동으로 올라갑니다.</strong><br>
+          폴더 구조(경로)도 그대로 유지됩니다.</div>
+        </div>
+        <div class="info yellow" style="margin-top:8px">
+          <i class="fas fa-exclamation-triangle"></i>
+          <div><strong>크롬/엣지 브라우저 권장.</strong> 일부 브라우저는 폴더 드래그가 안 될 수 있습니다.<br>
+          안 되면 방법 1(파일 하나씩)이나 방법 2를 사용하세요.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-head">
+        <div class="step-circle">3</div>
+        <div>
+          <h3>업로드할 파일 목록 — android 폴더 전체</h3>
+          <div class="sub">현재 프로젝트의 모든 android 파일</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <div class="file-tree">
+          <span class="folder">android/</span><br>
+          <span style="padding-left:16px" class="folder">├── .github/workflows/</span><br>
+          <span style="padding-left:32px" class="file hl">│   └── build.yml</span> <span class="comment">← GitHub Actions 자동 빌드</span><br>
+          <span style="padding-left:16px" class="folder">├── app/</span><br>
+          <span style="padding-left:32px" class="file hl">│   ├── build.gradle</span> <span class="comment">← 버전 번호</span><br>
+          <span style="padding-left:32px" class="folder">│   └── src/main/</span><br>
+          <span style="padding-left:48px" class="file hl">│       ├── AndroidManifest.xml</span> <span class="comment">← 앱 이름·권한</span><br>
+          <span style="padding-left:48px" class="folder">│       ├── java/com/cargo/driver/</span><br>
+          <span style="padding-left:64px" class="file hl">│       │   ├── MainActivity.java</span> <span class="comment">← URL</span><br>
+          <span style="padding-left:64px" class="file hl">│       │   ├── GpsService.java</span> <span class="comment">← GPS 주기</span><br>
+          <span style="padding-left:64px" class="file">│       │   └── WebAppInterface.java</span><br>
+          <span style="padding-left:48px" class="folder">│       └── res/</span><br>
+          <span style="padding-left:64px" class="file">│           ├── drawable/ic_gps.xml</span><br>
+          <span style="padding-left:64px" class="file">│           ├── layout/activity_main.xml</span><br>
+          <span style="padding-left:64px" class="file hl">│           └── values/strings.xml</span> <span class="comment">← 앱 이름</span><br>
+          <span style="padding-left:16px" class="folder">├── gradle/wrapper/</span><br>
+          <span style="padding-left:16px" class="file">├── build.gradle</span><br>
+          <span style="padding-left:16px" class="file">├── settings.gradle</span><br>
+          <span style="padding-left:16px" class="file">└── gradlew</span>
+        </div>
+        <p style="font-size:13px;color:var(--muted);margin-top:8px">
+          <span class="badge yellow"><i class="fas fa-star"></i> 노란색</span> 파일이 자주 수정하는 파일입니다.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /panel-c -->
+
+
+<!-- ═══════════════════════════════════════ -->
+<!-- 업로드 후 확인                            -->
+<!-- ═══════════════════════════════════════ -->
+<div id="panel-d" class="panel">
+
+  <div class="step-wrap">
+
+    <div class="step-card">
+      <div class="step-head">
+        <div class="step-circle"><i class="fas fa-check"></i></div>
+        <div>
+          <h3>Actions 탭에서 빌드 확인</h3>
+          <div class="sub">파일 업로드 후 자동으로 APK 빌드가 시작됩니다</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <ul class="num-list">
+          <li><div class="n">①</div><p>저장소 상단 <strong>Actions</strong> 탭 클릭</p></li>
+          <li><div class="n">②</div><p>가장 최근 워크플로 클릭 — <strong>🟡 노란 원 = 진행 중</strong> (5~7분 대기)</p></li>
+          <li><div class="n">③</div><p><strong>✅ 초록 체크</strong>로 바뀌면 빌드 완료</p></li>
+          <li><div class="n">④</div><p>워크플로 클릭 → 하단 <strong>Artifacts</strong> 섹션 → APK 다운로드</p></li>
+        </ul>
+
+        <div class="mockup" style="margin-top:16px">
+          <div class="mockup-bar">
+            <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+            <span class="url-bar">github.com/rpaakdi1-spec/cargo-driver-app/actions</span>
+          </div>
+          <div style="padding:14px 18px;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#0d1117;border:1px solid #30363d;border-radius:6px">
+              <span style="color:var(--green);font-size:18px">✅</span>
+              <div>
+                <div style="font-size:13px;color:#c9d1d9;font-weight:600">Build Android APK</div>
+                <div style="font-size:12px;color:var(--muted)">main — 2 minutes ago</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#0d1117;border:1px solid #30363d;border-radius:6px;opacity:.5">
+              <span style="color:var(--yellow);font-size:18px">🟡</span>
+              <div>
+                <div style="font-size:13px;color:#c9d1d9">Build Android APK</div>
+                <div style="font-size:12px;color:var(--muted)">진행 중...</div>
+              </div>
+            </div>
+          </div>
+          <!-- Artifacts -->
+          <div style="border-top:1px solid #30363d;padding:14px 18px">
+            <div style="font-size:13px;font-weight:600;color:#c9d1d9;margin-bottom:8px">📦 Artifacts</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#161b22;border:1px solid #30363d;border-radius:6px">
+              <span style="color:#58a6ff;font-size:13px"><i class="fas fa-file-archive"></i> cargo-driver-app.apk</span>
+              <button class="gh-btn outline" style="font-size:12px;padding:3px 10px"><i class="fas fa-download"></i> 다운로드</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-head">
+        <div class="step-circle"><i class="fas fa-mobile-alt"></i></div>
+        <div>
+          <h3>APK 기사님 기기에 설치</h3>
+          <div class="sub">카카오톡으로 전송 또는 링크 공유</div>
+        </div>
+      </div>
+      <div class="step-body">
+        <ul class="checklist">
+          <li>
+            <i class="fas fa-check-circle"></i>
+            <div>APK 파일 다운로드 후 카카오톡으로 기사님께 전송</div>
+          </li>
+          <li>
+            <i class="fas fa-check-circle"></i>
+            <div>기사님 폰에서 파일 열기 → <strong>"알 수 없는 출처 허용"</strong> → 설치</div>
+          </li>
+          <li>
+            <i class="fas fa-exclamation-circle"></i>
+            <div>기존 앱이 설치되어 있으면 <strong>삭제 없이 덮어쓰기</strong> 설치 가능 (단, versionCode가 더 커야 함)</div>
+          </li>
+          <li>
+            <i class="fas fa-check-circle"></i>
+            <div>설치 후 앱 실행 → GPS 권한 "항상 허용" 설정</div>
+          </li>
+        </ul>
+
+        <div class="info blue" style="margin-top:16px">
+          <i class="fas fa-link"></i>
+          <div><strong>deploy-guide.html의 APK 다운로드 탭</strong>을 설정하면 기사님이 직접 사이트에서 최신 APK를 다운로드할 수도 있습니다.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 자주 묻는 질문 -->
+    <div class="step-card">
+      <div class="step-head">
+        <div class="step-circle"><i class="fas fa-question"></i></div>
+        <div>
+          <h3>업로드 시 자주 생기는 문제</h3>
+        </div>
+      </div>
+      <div class="step-body">
+        <ul class="checklist">
+          <li>
+            <i class="fas fa-times-circle"></i>
+            <div>
+              <strong>Actions 탭이 없다</strong><br>
+              <span style="color:var(--muted);font-size:13px">Settings → Actions → General → "Allow all actions" 선택 후 Save</span>
+            </div>
+          </li>
+          <li>
+            <i class="fas fa-times-circle"></i>
+            <div>
+              <strong>빌드가 ❌ 빨간색으로 실패</strong><br>
+              <span style="color:var(--muted);font-size:13px">실패한 워크플로 클릭 → 오류 메시지 확인. 보통 Java 문법 오류거나 versionCode 중복입니다.</span>
+            </div>
+          </li>
+          <li>
+            <i class="fas fa-times-circle"></i>
+            <div>
+              <strong>Artifacts(APK)가 없다</strong><br>
+              <span style="color:var(--muted);font-size:13px">build.yml 파일에 업로드 설정이 없는 경우입니다. deploy-guide.html의 GitHub Actions 빌드 탭을 참고하세요.</span>
+            </div>
+          </li>
+          <li>
+            <i class="fas fa-times-circle"></i>
+            <div>
+              <strong>폴더 드래그가 안 된다</strong><br>
+              <span style="color:var(--muted);font-size:13px">크롬 브라우저를 사용하세요. 또는 방법 1(파일 하나씩)을 이용하세요.</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /panel-d -->
+
+</div><!-- /wrap -->
+
+<div id="toast">✅ 완료!</div>
+
+<script>
+function go(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  event.currentTarget.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>

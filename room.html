@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>배송 현황 - 화물운송 관리 시스템</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="css/style.css?v=20250314A">
+    <link rel="stylesheet" href="css/room.css?v=20250314E">
+</head>
+<body class="room-body">
+    <!-- Header -->
+    <header class="room-header">
+        <div class="header-content">
+            <div class="logo">
+                <a href="index.html"><i class="fas fa-truck"></i></a>
+                <span id="headerRoomName">고객사 배송 현황</span>
+            </div>
+            <div class="header-actions">
+                <!-- ★ 알림 벨 -->
+                <div style="position:relative;" id="roomNotifWrapper">
+                    <button onclick="toggleRoomNotifPanel()"
+                        style="position:relative;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);
+                               color:#fff;border-radius:10px;padding:6px 10px;cursor:pointer;font-size:0.85rem;
+                               display:flex;align-items:center;gap:5px;">
+                        <i class="fas fa-bell"></i>
+                        <span id="roomNotifBadge" data-count="0"
+                            style="display:none;position:absolute;top:-6px;right:-6px;
+                                   background:#ef4444;color:#fff;border-radius:50%;
+                                   width:18px;height:18px;font-size:0.65rem;font-weight:700;
+                                   align-items:center;justify-content:center;line-height:1;">0</span>
+                    </button>
+                    <!-- 알림 드롭다운 -->
+                    <div id="roomNotifPanel"
+                        style="display:none;position:absolute;right:0;top:calc(100% + 8px);
+                               width:310px;max-height:380px;overflow-y:auto;
+                               background:#fff;border:1px solid #e2e8f0;border-radius:12px;
+                               box-shadow:0 8px 32px rgba(0,0,0,0.15);z-index:1000;">
+                        <div style="padding:10px 14px;border-bottom:1px solid #f1f5f9;
+                                    font-size:0.8rem;font-weight:700;color:#64748b;
+                                    display:flex;align-items:center;gap:6px;background:#f8fafc;border-radius:12px 12px 0 0;">
+                            <i class="fas fa-bell" style="color:#f59e0b;"></i> 실시간 알림
+                            <span style="font-size:0.7rem;color:#94a3b8;margin-left:auto;">10초마다 갱신</span>
+                        </div>
+                        <div id="roomNotifList">
+                            <div class="notif-empty" style="padding:20px;text-align:center;color:#94a3b8;font-size:0.82rem;">
+                                <i class="fas fa-bell-slash" style="font-size:1.5rem;display:block;margin-bottom:8px;color:#cbd5e1;"></i>
+                                새 알림 없음
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <span class="room-badge"><i class="fas fa-lock-open"></i> 입장됨</span>
+                <button class="btn btn-outline btn-sm" id="btnLogout">
+                    <i class="fas fa-sign-out-alt"></i> 나가기
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Password Gate -->
+    <div class="password-gate" id="passwordGate" style="display:none;">
+        <div class="pw-gate-card">
+            <div class="pw-gate-icon"><i class="fas fa-lock"></i></div>
+            <h2 id="gateRoomName">고객사 룸</h2>
+            <p>이 룸은 비밀번호로 보호되어 있습니다.</p>
+            <div class="form-group">
+                <div class="input-with-icon">
+                    <input type="password" id="gatePassword" placeholder="비밀번호 입력" />
+                    <button type="button" class="toggle-pw" onclick="togglePassword('gatePassword')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="gateError" class="error-msg" style="display:none;"></div>
+            <button class="btn btn-primary btn-block" id="gateEnterBtn">
+                <i class="fas fa-sign-in-alt"></i> 입장하기
+            </button>
+            <a href="index.html" class="btn btn-outline btn-block" style="margin-top:10px;">
+                <i class="fas fa-arrow-left"></i> 돌아가기
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content (hidden until authenticated) -->
+    <main class="room-main" id="roomMain" style="display:none;">
+        <!-- Room Info Banner -->
+        <div class="room-info-banner">
+            <div class="room-info-content">
+                <div class="room-info-left">
+                    <h1 id="roomTitle"><i class="fas fa-building"></i> -</h1>
+                    <p id="roomContact"><i class="fas fa-phone"></i> -</p>
+                </div>
+                <div class="room-stats">
+                    <div class="r-stat">
+                        <span class="r-stat-num" id="rTotal">0</span>
+                        <span class="r-stat-label">전체</span>
+                    </div>
+                    <div class="r-stat">
+                        <span class="r-stat-num status-loading" id="rLoading">0</span>
+                        <span class="r-stat-label">상차완료</span>
+                    </div>
+                    <div class="r-stat">
+                        <span class="r-stat-num status-transit" id="rTransit">0</span>
+                        <span class="r-stat-label">운송중</span>
+                    </div>
+                    <div class="r-stat">
+                        <span class="r-stat-num status-delivered" id="rDelivered">0</span>
+                        <span class="r-stat-label">배송완료</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="deliveries">
+                <i class="fas fa-list"></i> 배송 목록
+            </button>
+            <button class="tab-btn" data-tab="map">
+                <i class="fas fa-map-marked-alt"></i> 실시간 지도
+            </button>
+            <button class="tab-btn" data-tab="docs">
+                <i class="fas fa-file-image"></i> 서류 사진
+            </button>
+        </div>
+
+        <!-- Deliveries Tab -->
+        <div class="tab-content active" id="tab-deliveries">
+            <div class="tab-toolbar">
+                <div class="search-bar compact">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchDelivery" placeholder="기사명, 차량번호, 화물 검색..." />
+                </div>
+                <div class="filter-btns">
+                    <button class="filter-btn active" data-status="all">전체</button>
+                    <button class="filter-btn" data-status="waiting">대기</button>
+                    <button class="filter-btn" data-status="loading">상차완료</button>
+                    <button class="filter-btn" data-status="transit">운송중</button>
+                    <button class="filter-btn" data-status="delivered">배송완료</button>
+                </div>
+                <button class="btn btn-primary btn-sm" id="btnAddDelivery">
+                    <i class="fas fa-plus"></i> 배송 등록
+                </button>
+            </div>
+
+            <div class="delivery-list" id="deliveryList">
+                <div class="loading-spinner">
+                    <i class="fas fa-circle-notch fa-spin"></i>
+                    <span>로딩 중...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Tab -->
+        <div class="tab-content" id="tab-map">
+            <div class="map-toolbar">
+                <div class="map-drivers-panel" id="mapDriversPanel">
+                    <div class="panel-title"><i class="fas fa-users"></i> 운송 기사 목록</div>
+                    <div id="driverListForMap"></div>
+                </div>
+                <div class="map-wrapper">
+                    <div id="deliveryMap"></div>
+                    <div class="map-refresh-info">
+                        <i class="fas fa-sync-alt fa-spin" id="mapRefreshIcon" style="display:none;"></i>
+                        <span id="mapLastUpdate">마지막 업데이트: -</span>
+                        <button class="btn btn-sm btn-outline" onclick="refreshMap()">
+                            <i class="fas fa-sync"></i> 새로고침
+                        </button>
+                        <label class="auto-refresh-toggle">
+                            <input type="checkbox" id="autoRefreshToggle" checked>
+                            <span>자동갱신(30초)</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documents Tab -->
+        <div class="tab-content" id="tab-docs">
+            <div class="docs-filter">
+                <select id="docsDeliveryFilter">
+                    <option value="">-- 배송 선택 --</option>
+                </select>
+                <button class="btn btn-sm btn-outline" onclick="loadDocuments()">
+                    <i class="fas fa-search"></i> 조회
+                </button>
+            </div>
+            <div class="docs-grid" id="docsGrid">
+                <div class="empty-state">
+                    <i class="fas fa-file-image"></i>
+                    <p>배송을 선택하면 서류 사진을 확인할 수 있습니다.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Delivery Modal -->
+    <div class="modal-overlay" id="addDeliveryModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3><i class="fas fa-plus-circle"></i> 배송 등록</h3>
+                <button class="modal-close" id="closeAddDelivery"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="addDeliveryForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-user"></i> 기사명 <span class="required">*</span></label>
+                            <input type="text" id="driverName" placeholder="기사 이름" required />
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-car"></i> 차량번호 <span class="required">*</span></label>
+                            <input type="text" id="vehicleNumber" placeholder="예: 12가 3456" required />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-phone"></i> 기사 핸드폰번호</label>
+                        <input type="tel" id="driverPhone" placeholder="010-0000-0000" maxlength="13"
+                            oninput="this.value=this.value.replace(/[^0-9]/g,'').replace(/^(\d{3})(\d{4})(\d{4})$/,'$1-$2-$3').replace(/^(\d{3})(\d{3,4})(\d{0,4})$/,'$1-$2-$3').replace(/-+$/,'')" />
+                        <small style="color:var(--gray-400);margin-top:3px;display:block;font-size:0.75rem;"><i class="fas fa-info-circle"></i> 숫자만 입력하면 자동 하이픈 적용</small>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-snowflake"></i> 화물 타입 <span class="required">*</span></label>
+                        <select id="cargoType" required>
+                            <option value="">-- 선택 --</option>
+                            <option value="냉동/냉장">❄️ 냉동/냉장</option>
+                            <option value="냉동">🧊 냉동</option>
+                            <option value="냉장">🌡️ 냉장</option>
+                            <option value="상온">📦 상온</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-info-circle"></i> 상태</label>
+                            <select id="deliveryStatus">
+                                <option value="waiting">대기</option>
+                                <option value="loading">상차완료</option>
+                                <option value="transit">운송중</option>
+                                <option value="delivered">배송완료</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-map-marker-alt"></i> 출발지</label>
+                            <input type="text" id="origin" placeholder="출발지 주소" />
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-map-pin"></i> 목적지</label>
+                            <input type="text" id="destination" placeholder="목적지 주소" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-key"></i> 기사 PIN <span class="required">*</span></label>
+                        <div class="input-with-icon">
+                            <input type="password" id="driverPin" placeholder="숫자 4~8자리 (기사에게 전달)" inputmode="numeric" maxlength="8" required autocomplete="new-password"/>
+                            <button type="button" class="toggle-pw" onclick="togglePassword('driverPin')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <small style="color:var(--gray-400);margin-top:4px;display:block;"><i class="fas fa-info-circle"></i> 기사가 driver.html 접속 시 이름+PIN으로 로그인합니다</small>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-sticky-note"></i> 메모</label>
+                        <textarea id="deliveryNotes" placeholder="특이사항, 메모 등"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline" id="cancelAddDelivery">취소</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 등록
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delivery Detail Modal -->
+    <div class="modal-overlay" id="deliveryDetailModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h3><i class="fas fa-info-circle"></i> 배송 상세 정보</h3>
+                <button class="modal-close" id="closeDeliveryDetail"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" id="deliveryDetailContent">
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Lightbox -->
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+        <div class="lightbox-content">
+            <button class="lightbox-close" onclick="closeLightbox()"><i class="fas fa-times"></i></button>
+            <img id="lightboxImg" src="" alt="사진 확대보기" />
+            <p id="lightboxCaption"></p>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/utils.js?v=20250320K"></script>
+    <script src="js/room.js?v=20250320K"></script>
+    <script>
+        document.addEventListener('click', (e) => {
+            const wrapper = document.getElementById('roomNotifWrapper');
+            const panel   = document.getElementById('roomNotifPanel');
+            if (panel && panel.style.display !== 'none' && wrapper && !wrapper.contains(e.target)) {
+                panel.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,442 @@
+/* ===========================
+   기사 페이지 스타일 - driver.css
+=========================== */
+
+.driver-body {
+    background: #f0f4ff;
+}
+
+/* Driver Header */
+.driver-header {
+    background: #1a2940;
+    color: var(--white);
+    padding: 0 20px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow);
+}
+
+/* GPS Status */
+.gps-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    transition: var(--transition);
+}
+
+.gps-on {
+    background: rgba(22, 163, 74, 0.2);
+    color: #86efac;
+    animation: pulse 2s infinite;
+}
+
+.gps-off {
+    background: rgba(255,255,255,0.1);
+    color: var(--gray-400);
+}
+
+/* ★ GPS 재연결 중 상태 */
+.gps-retry {
+    background: rgba(234, 179, 8, 0.2);
+    color: #fde047;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.6; }
+    100% { opacity: 1; }
+}
+
+/* Driver Login */
+.driver-login {
+    min-height: calc(100vh - 64px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #e0e8ff 0%, #f0f4ff 100%);
+}
+
+.driver-login-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 40px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: var(--shadow-xl);
+    animation: fadeInUp 0.3s ease;
+}
+
+.driver-login-icon {
+    width: 80px;
+    height: 80px;
+    background: #dbeafe;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+}
+
+.driver-login-icon i {
+    font-size: 2rem;
+    color: var(--primary);
+}
+
+.driver-login-card h2 {
+    text-align: center;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: 8px;
+}
+
+.driver-login-card p {
+    text-align: center;
+    color: var(--gray-500);
+    margin-bottom: 28px;
+    font-size: 0.9rem;
+}
+
+/* Driver Work Section */
+.driver-work {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Delivery Info Card */
+.delivery-info-card {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+    color: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow-lg);
+}
+
+.delivery-info-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    gap: 12px;
+}
+
+.delivery-info-header h2 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.delivery-info-header p {
+    opacity: 0.75;
+    font-size: 0.9rem;
+    margin-top: 4px;
+}
+
+.delivery-status-badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.delivery-info-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.info-item > i {
+    width: 20px;
+    text-align: center;
+    opacity: 0.75;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.info-label {
+    display: block;
+    font-size: 0.75rem;
+    opacity: 0.65;
+    font-weight: 600;
+}
+
+.info-value {
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+/* Work Section */
+.work-section {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--gray-800);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--gray-100);
+}
+
+.section-badge {
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-left: auto;
+}
+
+.loading-badge { background: var(--warning-light); color: var(--warning); }
+.delivered-badge { background: var(--success-light); color: var(--success); }
+.section-badge.done    { background: var(--success); color: var(--white); }
+.section-badge.arrived { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+
+/* ★ 파일 선택 버튼 — input overlay 방식 (WebView 100% 호환) */
+.file-btn-wrap {
+    position: relative;
+    display: inline-block;
+    overflow: hidden;
+    cursor: pointer;
+}
+.file-btn-wrap .file-overlay-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    font-size: 100px; /* 터치 영역 확보 */
+}
+
+/* GPS Control */
+.gps-control-card {
+    background: var(--gray-50);
+    border-radius: var(--radius);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border: 2px solid var(--gray-200);
+}
+
+.gps-coords {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.gps-coords::before {
+    content: '';
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--gray-300);
+}
+
+.gps-coords.active::before {
+    background: var(--success);
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2);
+    animation: pulse 2s infinite;
+}
+
+.gps-accuracy {
+    font-size: 0.82rem;
+    color: var(--gray-500);
+}
+
+.gps-last-update {
+    font-size: 0.78rem;
+    color: var(--gray-400);
+}
+
+.gps-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.gps-buttons .btn {
+    flex: 1;
+    justify-content: center;
+}
+
+/* Upload Grid */
+.upload-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* Upload Card */
+.upload-card {
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: var(--transition);
+}
+
+.upload-card.uploaded {
+    border-color: var(--success);
+}
+
+.upload-preview {
+    height: 160px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--gray-50);
+    text-align: center;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+}
+
+.upload-preview i {
+    font-size: 2rem;
+    color: var(--gray-300);
+}
+
+.upload-preview p {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--gray-600);
+}
+
+.upload-preview span {
+    font-size: 0.75rem;
+    color: var(--gray-400);
+}
+
+.upload-preview img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.upload-actions {
+    display: flex;
+    gap: 8px;
+    padding: 10px;
+    background: var(--white);
+    justify-content: center;
+}
+
+.upload-label {
+    cursor: pointer;
+}
+
+/* ★ 수정(재촬영) 버튼 */
+.edit-photo-btn {
+    background: #fff7ed !important;
+    color: #ea580c !important;
+    border-color: #fdba74 !important;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    width: 100%;
+    justify-content: center;
+    transition: background 0.2s, transform 0.1s;
+}
+.edit-photo-btn:active {
+    transform: scale(0.97);
+    background: #ffedd5 !important;
+}
+.edit-photo-btn i {
+    font-size: 0.82rem;
+}
+
+.upload-status {
+    padding: 0 10px 8px;
+    font-size: 0.78rem;
+    text-align: center;
+    min-height: 24px;
+    color: var(--success);
+    font-weight: 600;
+}
+
+/* PIN 로그인 안내 */
+.pin-guide {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--gray-400);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px;
+    background: var(--gray-50);
+    border-radius: var(--radius-sm);
+}
+
+/* 기사 환영 */
+.driver-welcome {
+    text-align: center;
+    padding-bottom: 4px;
+}
+
+.driver-welcome h2 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--gray-900);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .driver-login-card {
+        padding: 28px 20px;
+    }
+
+    .delivery-info-card {
+        padding: 18px;
+    }
+
+    .upload-preview {
+        height: 130px;
+    }
+
+    .gps-buttons {
+        flex-direction: column;
+    }
+}

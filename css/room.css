@@ -1,0 +1,549 @@
+/* ===========================
+   룸 페이지 스타일 - room.css
+=========================== */
+
+/* Password Gate */
+.password-gate {
+    position: fixed;
+    inset: 0;
+    top: 64px;
+    background: linear-gradient(135deg, #f0f4ff 0%, #e0e8ff 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 20px;
+}
+
+.pw-gate-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 40px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: var(--shadow-xl);
+    text-align: center;
+    animation: fadeInUp 0.3s ease;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.pw-gate-icon {
+    width: 80px;
+    height: 80px;
+    background: var(--primary-light);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+}
+
+.pw-gate-icon i {
+    font-size: 2rem;
+    color: var(--primary);
+}
+
+.pw-gate-card h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin-bottom: 8px;
+}
+
+.pw-gate-card p {
+    color: var(--gray-500);
+    margin-bottom: 24px;
+    font-size: 0.9rem;
+}
+
+/* Room Header */
+.room-header {
+    background: var(--secondary);
+    color: var(--white);
+    padding: 0 24px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow);
+}
+
+.room-badge {
+    background: rgba(255,255,255,0.1);
+    color: #86efac;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Room Main */
+.room-main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+}
+
+/* Room Info Banner */
+.room-info-banner {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+    color: var(--white);
+    padding: 28px 32px;
+    margin: 0 -24px;
+    margin-bottom: 0;
+}
+
+.room-info-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.room-info-left h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.room-info-left p {
+    opacity: 0.75;
+    font-size: 0.9rem;
+}
+
+.room-stats {
+    display: flex;
+    gap: 24px;
+}
+
+.r-stat {
+    text-align: center;
+    background: rgba(255,255,255,0.1);
+    padding: 12px 20px;
+    border-radius: var(--radius);
+}
+
+.r-stat-num {
+    display: block;
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+
+.r-stat-label {
+    display: block;
+    font-size: 0.78rem;
+    opacity: 0.75;
+}
+
+.r-stat-num.status-loading { color: #fcd34d; }
+.r-stat-num.status-transit { color: #67e8f9; }
+.r-stat-num.status-delivered { color: #86efac; }
+
+/* Map */
+.map-toolbar {
+    display: flex;
+    gap: 16px;
+    height: 520px;
+}
+
+.map-drivers-panel {
+    width: 240px;
+    flex-shrink: 0;
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 2px solid var(--gray-200);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-title {
+    padding: 14px 16px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--gray-700);
+    border-bottom: 1px solid var(--gray-100);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--gray-50);
+    border-radius: var(--radius) var(--radius) 0 0;
+    flex-shrink: 0;
+}
+
+.driver-map-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--gray-100);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.driver-map-item:hover {
+    background: var(--primary-light);
+}
+
+.driver-map-item.focused {
+    background: #eff6ff;
+    border-left: 3px solid var(--primary);
+    padding-left: 13px;
+}
+
+.driver-map-item .driver-name {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--gray-900);
+    margin-bottom: 4px;
+}
+
+.driver-map-item .driver-vehicle {
+    font-size: 0.8rem;
+    color: var(--gray-500);
+}
+
+.driver-map-item .driver-gps-time {
+    font-size: 0.75rem;
+    color: var(--gray-400);
+    margin-top: 4px;
+}
+
+.driver-map-item .gps-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 4px;
+}
+
+.gps-dot.active { background: #22c55e; }
+.gps-dot.inactive { background: var(--gray-300); }
+
+/* 위치추적 버튼 */
+.btn-track-gps {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: none;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Noto Sans KR', sans-serif;
+    white-space: nowrap;
+}
+
+.btn-track-gps.recent {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.btn-track-gps.recent:hover {
+    background: #16a34a;
+    color: white;
+    transform: scale(1.05);
+}
+
+.btn-track-gps.old {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.btn-track-gps.old:hover {
+    background: #64748b;
+    color: white;
+    transform: scale(1.05);
+}
+
+.btn-track-gps i {
+    font-size: 0.7rem;
+}
+
+.map-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#deliveryMap {
+    flex: 1;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 2px solid var(--gray-200);
+    min-height: 400px;
+}
+
+.map-refresh-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.82rem;
+    color: var(--gray-500);
+    background: var(--white);
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--gray-200);
+    flex-wrap: wrap;
+}
+
+.auto-refresh-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    color: var(--gray-600);
+}
+
+.auto-refresh-toggle input {
+    width: auto;
+}
+
+/* Documents */
+.docs-filter {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    align-items: center;
+}
+
+.docs-filter select {
+    padding: 10px 14px;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    font-family: var(--font);
+    font-size: 0.9rem;
+    min-width: 280px;
+    transition: var(--transition);
+}
+
+.docs-filter select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.docs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.doc-section {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 2px solid var(--gray-200);
+    overflow: hidden;
+}
+
+.doc-section-header {
+    padding: 14px 18px;
+    background: var(--gray-50);
+    border-bottom: 1px solid var(--gray-200);
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--gray-700);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.doc-header-meta {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.doc-date-tag {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.doc-time-tag {
+    background: var(--gray-100);
+    color: var(--gray-500);
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.doc-section-header.loading-type { border-left: 4px solid var(--warning); }
+.doc-section-header.delivery-type { border-left: 4px solid var(--success); }
+
+.doc-image-wrap {
+    padding: 16px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.doc-image-wrap:hover {
+    background: var(--gray-50);
+}
+
+.doc-image-wrap img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--gray-200);
+}
+
+.doc-image-wrap p {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--gray-500);
+    margin-top: 8px;
+}
+
+.doc-no-image {
+    padding: 30px;
+    text-align: center;
+    color: var(--gray-400);
+    font-size: 0.85rem;
+}
+
+.doc-no-image i {
+    display: block;
+    font-size: 2rem;
+    margin-bottom: 8px;
+}
+
+/* Delivery Detail */
+.detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.detail-label {
+    font-size: 0.8rem;
+    color: var(--gray-500);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.detail-value {
+    font-size: 0.95rem;
+    color: var(--gray-900);
+    font-weight: 500;
+}
+
+.detail-docs {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--gray-200);
+}
+
+.detail-docs h4 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--gray-700);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.detail-docs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.detail-doc-item {
+    text-align: center;
+}
+
+.detail-doc-item img {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    border: 2px solid var(--gray-200);
+    transition: var(--transition);
+}
+
+.detail-doc-item img:hover {
+    border-color: var(--primary);
+}
+
+.detail-doc-item p {
+    font-size: 0.78rem;
+    color: var(--gray-500);
+    margin-top: 6px;
+}
+
+.detail-doc-empty {
+    background: var(--gray-50);
+    border-radius: var(--radius-sm);
+    padding: 20px;
+    text-align: center;
+    color: var(--gray-400);
+    font-size: 0.82rem;
+    border: 2px dashed var(--gray-200);
+}
+
+.detail-doc-empty i {
+    display: block;
+    font-size: 1.5rem;
+    margin-bottom: 6px;
+}
+
+@media (max-width: 768px) {
+    .room-info-banner { padding: 20px 16px; margin: 0 -16px; }
+    .room-stats { gap: 12px; }
+    .r-stat { padding: 8px 14px; }
+
+    .map-toolbar { flex-direction: column; height: auto; }
+    .map-drivers-panel { width: 100%; height: 160px; }
+    #deliveryMap { min-height: 300px; }
+
+    .detail-grid { grid-template-columns: 1fr; }
+    .detail-docs-grid { grid-template-columns: 1fr 1fr; }
+
+    .docs-filter { flex-direction: column; align-items: flex-start; }
+    .docs-filter select { min-width: 100%; }
+}

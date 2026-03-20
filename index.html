@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>화물운송 관리 시스템</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css?v=20250314J">
+    <link rel="stylesheet" href="css/main.css?v=20250314J">
+</head>
+<body class="main-body">
+
+    <!-- Header -->
+    <header class="main-header">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-truck"></i>
+                <span>화물운송 관리 시스템</span>
+            </div>
+            <div class="header-actions">
+                <button id="btnOpenGuide" onclick="openGuide()" style="color:rgba(255,255,255,0.9); background:rgba(255,255,255,0.15); text-decoration:none; font-size:0.85rem; display:flex; align-items:center; gap:6px; padding:7px 14px; border:1px solid rgba(255,255,255,0.4); border-radius:8px; transition:all 0.2s; margin-right:6px; cursor:pointer; font-weight:600; font-family:inherit;">
+                    <i class="fas fa-book-open"></i> <span class="btn-text">사용법</span>
+                </button>
+                <a href="qr.html" style="color:rgba(255,255,255,0.8); text-decoration:none; font-size:0.85rem; display:flex; align-items:center; gap:6px; padding:7px 14px; border:1px solid rgba(255,255,255,0.3); border-radius:8px; transition:all 0.2s;">
+                    <i class="fas fa-qrcode"></i> <span class="btn-text">QR·링크</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- 역할 선택 메인 화면 -->
+    <main class="role-main">
+
+        <!-- 상단 타이틀 -->
+        <div class="role-hero">
+            <div class="role-hero-icon">
+                <i class="fas fa-truck-moving"></i>
+            </div>
+            <h1>화물운송 관리 시스템</h1>
+            <p>역할을 선택하여 접속하세요</p>
+        </div>
+
+        <!-- 통계 바 -->
+        <div class="main-stats-bar">
+            <div class="main-stat">
+                <i class="fas fa-building"></i>
+                <span class="ms-num" id="statRooms">-</span>
+                <span class="ms-label">고객사</span>
+            </div>
+            <div class="main-stat-divider"></div>
+            <div class="main-stat">
+                <i class="fas fa-truck"></i>
+                <span class="ms-num" id="statDeliveries">-</span>
+                <span class="ms-label">전체 배송</span>
+            </div>
+            <div class="main-stat-divider"></div>
+            <div class="main-stat">
+                <i class="fas fa-shipping-fast"></i>
+                <span class="ms-num ms-active" id="statActive">-</span>
+                <span class="ms-label">운송중</span>
+            </div>
+            <div class="main-stat-divider"></div>
+            <div class="main-stat">
+                <i class="fas fa-check-double"></i>
+                <span class="ms-num ms-done" id="statDone">-</span>
+                <span class="ms-label">완료</span>
+            </div>
+        </div>
+
+        <!-- 역할 선택 카드 3종 -->
+        <div class="role-cards">
+
+            <!-- 관리자 -->
+            <a href="admin.html" class="role-card role-admin">
+                <div class="role-card-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="role-card-body">
+                    <h2>관리자</h2>
+                    <p>고객사 룸 생성 및 관리<br>기사 PIN 설정<br>전체 배송 현황 조회</p>
+                </div>
+                <div class="role-card-footer">
+                    <span class="role-access-tag">
+                        <i class="fas fa-lock"></i> 비밀번호 필요
+                    </span>
+                    <i class="fas fa-arrow-right role-arrow"></i>
+                </div>
+            </a>
+
+            <!-- 고객사 -->
+            <div class="role-card role-customer" id="roleCustomerCard" style="cursor:pointer;">
+                <div class="role-card-icon">
+                    <i class="fas fa-building"></i>
+                </div>
+                <div class="role-card-body">
+                    <h2>고객사</h2>
+                    <p>배송 현황 실시간 확인<br>기사 GPS 위치 추적<br>서류 사진 조회</p>
+                </div>
+                <div class="role-card-footer">
+                    <span class="role-access-tag">
+                        <i class="fas fa-lock"></i> 룸 비밀번호 필요
+                    </span>
+                    <i class="fas fa-arrow-right role-arrow"></i>
+                </div>
+            </div>
+
+            <!-- 기사 앱 APK 다운로드 -->
+            <a href="apk-download.html" class="role-card" style="background:linear-gradient(135deg,#1e1b4b 0%,#312e81 100%);border:1.5px solid rgba(99,102,241,0.4);">
+                <div class="role-card-icon" style="background:linear-gradient(135deg,#6366f1,#4f46e5);">
+                    <i class="fas fa-download"></i>
+                </div>
+                <div class="role-card-body">
+                    <h2 style="color:#c7d2fe;">기사 앱 다운로드</h2>
+                    <p style="color:rgba(199,210,254,0.8);">Android APK 직접 다운로드<br>백그라운드 GPS 지원<br>Android 8.0 이상</p>
+                </div>
+                <div class="role-card-footer">
+                    <span class="role-access-tag" style="background:rgba(99,102,241,0.2);color:#a5b4fc;">
+                        <i class="fab fa-android"></i> v1.0.0
+                    </span>
+                    <i class="fas fa-arrow-down role-arrow" style="color:#a5b4fc;"></i>
+                </div>
+            </a>
+
+            <!-- 사진 보관함 -->
+            <a href="gallery.html" class="role-card" style="background:linear-gradient(135deg,#f0f9ff 0%,#e0f2fe 100%);border:1.5px solid #bae6fd;">
+                <div class="role-card-icon" style="background:linear-gradient(135deg,#0ea5e9,#2563eb);">
+                    <i class="fas fa-images"></i>
+                </div>
+                <div class="role-card-body">
+                    <h2 style="color:#0369a1;">사진 보관함</h2>
+                    <p style="color:#0369a1;">날짜·거래처별 서류 사진<br>상차/하차 사진 통합 조회<br>기간별 검색 및 다운로드</p>
+                </div>
+                <div class="role-card-footer">
+                    <span class="role-access-tag" style="background:rgba(3,105,161,0.1);color:#0369a1;">
+                        <i class="fas fa-lock"></i> 관리자 비밀번호 필요
+                    </span>
+                    <i class="fas fa-arrow-right role-arrow" style="color:#0369a1;"></i>
+                </div>
+            </a>
+
+        </div>
+
+        <!-- 고객사 룸 목록 (펼침) -->
+        <div class="rooms-panel" id="roomsPanel" style="display:none;">
+            <div class="rooms-panel-header">
+                <h3><i class="fas fa-building"></i> 고객사 룸 선택</h3>
+                <button class="btn btn-outline btn-sm" id="closeRoomsPanel">
+                    <i class="fas fa-times"></i> 닫기
+                </button>
+            </div>
+            <div class="search-bar" style="margin-bottom:16px;">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchRoomMain" placeholder="고객사명 검색..." autocomplete="off"/>
+            </div>
+            <div class="room-grid" id="mainRoomGrid">
+                <div class="loading-spinner">
+                    <i class="fas fa-circle-notch fa-spin"></i>
+                    <span>로딩 중...</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Room Password Modal -->
+    <div class="modal-overlay" id="roomPasswordModal">
+        <div class="modal modal-sm">
+            <div class="modal-header">
+                <h3><i class="fas fa-lock"></i> 룸 비밀번호 입력</h3>
+                <button class="modal-close" id="closePasswordModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p id="roomPasswordTitle" class="room-pw-title" style="font-weight:600;margin-bottom:12px;color:#1e293b;"></p>
+                <div class="form-group">
+                    <div class="input-with-icon">
+                        <input type="password" id="enterPassword" placeholder="비밀번호 입력" autocomplete="current-password"/>
+                        <button type="button" class="toggle-pw" onclick="togglePassword('enterPassword')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="passwordError" class="error-msg" style="display:none;color:#ef4444;font-size:0.85rem;margin-top:8px;"></div>
+                <div class="form-actions" style="margin-top:20px;display:flex;gap:10px;justify-content:flex-end;">
+                    <button class="btn btn-outline" id="cancelPasswordModal">취소</button>
+                    <button class="btn btn-primary" id="confirmPassword">
+                        <i class="fas fa-sign-in-alt"></i> 입장하기
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <!-- ===== 사용법 안내 모달 ===== -->
+    <div id="guideModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.55);overflow-y:auto;">
+      <div style="max-width:860px;margin:16px auto 40px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);font-family:'Noto Sans KR',sans-serif;">
+
+        <!-- 헤더 -->
+        <div style="background:linear-gradient(135deg,#1e3a8a,#2563eb,#0891b2);color:#fff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:8px;font-size:1rem;font-weight:700;"><i class="fas fa-book-open"></i> 사용법 안내</div>
+          <button onclick="closeGuide()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:0.95rem;"><i class="fas fa-times"></i></button>
+        </div>
+        <!-- 히어로 -->
+        <div style="background:linear-gradient(135deg,#1e3a8a,#2563eb,#0891b2);color:#fff;padding:22px 20px 30px;text-align:center;">
+          <h2 style="font-size:1.45rem;font-weight:800;margin-bottom:6px;"><i class="fas fa-truck"></i> 화물운송 관리 시스템</h2>
+          <p style="opacity:.85;font-size:.9rem;">화주(고객사) · 기사 · 관리자 역할별 단계별 사용 방법 안내</p>
+        </div>
+        <!-- 탭 -->
+        <div id="guideTabs" style="background:#fff;border-bottom:2px solid #e2e8f0;display:flex;overflow-x:auto;scrollbar-width:none;">
+          <button id="gTabOverview" onclick="gTab('overview')" style="flex:0 0 auto;padding:12px 18px;border:none;border-bottom:3px solid #0891b2;margin-bottom:-2px;background:none;font-family:inherit;font-size:.85rem;font-weight:700;color:#0891b2;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px;"><i class="fas fa-map"></i>전체 흐름</button>
+          <button id="gTabCustomer" onclick="gTab('customer')" style="flex:0 0 auto;padding:12px 18px;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;background:none;font-family:inherit;font-size:.85rem;font-weight:600;color:#64748b;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px;"><i class="fas fa-building"></i>화주</button>
+          <button id="gTabDriver"   onclick="gTab('driver')"   style="flex:0 0 auto;padding:12px 18px;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;background:none;font-family:inherit;font-size:.85rem;font-weight:600;color:#64748b;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px;"><i class="fas fa-truck"></i>기사</button>
+          <button id="gTabAdmin"    onclick="gTab('admin')"    style="flex:0 0 auto;padding:12px 18px;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;background:none;font-family:inherit;font-size:.85rem;font-weight:600;color:#64748b;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px;"><i class="fas fa-shield-alt"></i>관리자</button>
+          <button id="gTabFaq"      onclick="gTab('faq')"      style="flex:0 0 auto;padding:12px 18px;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;background:none;font-family:inherit;font-size:.85rem;font-weight:600;color:#64748b;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px;"><i class="fas fa-question-circle"></i>FAQ</button>
+        </div>
+
+        <!-- 본문 -->
+        <div style="padding:20px 16px 32px;background:#f8fafc;min-height:400px;">
+
+          <!-- ■ 전체 흐름 -->
+          <div id="gPanelOverview">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;">
+              <div style="background:linear-gradient(135deg,#0891b2,#0e7490);color:#fff;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:1.6rem;margin-bottom:6px;"><i class="fas fa-building"></i></div><div style="font-weight:700;font-size:.9rem;">화주(고객사)</div><div style="font-size:.72rem;opacity:.85;margin-top:4px;">배송 등록·현황 조회<br>서류 사진 확인</div></div>
+              <div style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:1.6rem;margin-bottom:6px;"><i class="fas fa-id-card"></i></div><div style="font-weight:700;font-size:.9rem;">기사</div><div style="font-size:.72rem;opacity:.85;margin-top:4px;">GPS 공유·서류 촬영<br>상·하차 완료 처리</div></div>
+              <div style="background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border-radius:12px;padding:14px;text-align:center;"><div style="font-size:1.6rem;margin-bottom:6px;"><i class="fas fa-shield-alt"></i></div><div style="font-weight:700;font-size:.9rem;">관리자</div><div style="font-size:.72rem;opacity:.85;margin-top:4px;">고객사 룸 생성<br>전체 배송 현황 관리</div></div>
+            </div>
+            <div style="background:#fff;border-radius:14px;padding:18px;box-shadow:0 4px 20px rgba(0,0,0,.06);">
+              <h3 style="font-size:.95rem;font-weight:700;margin-bottom:14px;color:#0f172a;"><i class="fas fa-route" style="color:#2563eb;margin-right:6px;"></i>배송 1건의 전체 흐름</h3>
+              <div style="position:relative;padding-left:26px;">
+                <div style="position:absolute;left:8px;top:4px;bottom:4px;width:2px;background:#e2e8f0;"></div>
+                <div style="position:relative;margin-bottom:16px;"><div style="position:absolute;left:-22px;top:3px;width:16px;height:16px;border-radius:50%;background:#7c3aed;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.2);"></div><span style="font-size:.7rem;font-weight:700;padding:1px 7px;border-radius:8px;background:#ede9fe;color:#6d28d9;display:inline-block;margin-bottom:3px;">관리자</span><div style="font-size:.88rem;font-weight:600;color:#1e293b;">고객사 룸 생성</div><div style="font-size:.76rem;color:#64748b;margin-top:1px;">룸 이름(회사명)과 비밀번호 설정 후 화주에게 URL·비밀번호 전달</div></div>
+                <div style="position:relative;margin-bottom:16px;"><div style="position:absolute;left:-22px;top:3px;width:16px;height:16px;border-radius:50%;background:#0891b2;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.2);"></div><span style="font-size:.7rem;font-weight:700;padding:1px 7px;border-radius:8px;background:#cffafe;color:#0e7490;display:inline-block;margin-bottom:3px;">화주</span><div style="font-size:.88rem;font-weight:600;color:#1e293b;">룸 입장 후 배송 등록</div><div style="font-size:.76rem;color:#64748b;margin-top:1px;">기사명·차량번호·화물·출발지·목적지·기사 PIN 입력 → 기사에게 PIN 전달</div></div>
+                <div style="position:relative;margin-bottom:16px;"><div style="position:absolute;left:-22px;top:3px;width:16px;height:16px;border-radius:50%;background:#16a34a;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.2);"></div><span style="font-size:.7rem;font-weight:700;padding:1px 7px;border-radius:8px;background:#dcfce7;color:#15803d;display:inline-block;margin-bottom:3px;">기사</span><div style="font-size:.88rem;font-weight:600;color:#1e293b;">이름 + PIN 로그인 → 배송건 선택 → 업무 시작</div><div style="font-size:.76rem;color:#64748b;margin-top:1px;">업무 시작 시 GPS 자동 켜짐</div></div>
+                <div style="position:relative;margin-bottom:16px;"><div style="position:absolute;left:-22px;top:3px;width:16px;height:16px;border-radius:50%;background:#d97706;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.2);"></div><span style="font-size:.7rem;font-weight:700;padding:1px 7px;border-radius:8px;background:#ffedd5;color:#c2410c;display:inline-block;margin-bottom:3px;">기사</span><div style="font-size:.88rem;font-weight:600;color:#1e293b;">상차 — 거래명세표·온도기록지 촬영</div><div style="font-size:.76rem;color:#64748b;margin-top:1px;">촬영 즉시 자동 업로드 → 상차 완료 버튼 클릭</div></div>
+                <div style="position:relative;margin-bottom:16px;"><div style="position:absolute;left:-22px;top:3px;width:16px;height:16px;border-radius:50%;background:#0891b2;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.2);"></div><span style="font-size:.7rem;font-weight:700;padding:1px 7px;border-radius:8px;background:#cffafe;color:#0e7490;display:inline-block;margin-bottom:3px;">화주</span><div style="font-size:.88rem;font-weight:600;color:#1e293b;">실시간 GPS 지도에서 기사 위치 확인</div><div style="font-size:.76rem;color:#64748b;margin-top:1px;">지도 탭 → 30초 자동 갱신 / 배송 카드 📍위치추적 버튼 클릭으로 바로 이동</div></div>
+                <div style="position:relative;margin-bottom:16px;"><div style="position:absolute;left:-22px;top:3px;width:16px;height:16px;border-radius:50%;background:#16a34a;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.2);"></div><span style="font-size:.7rem;font-weight:700;padding:1px 7px;border-radius:8px;background:#dcfce7;color:#15803d;display:inline-block;margin-bottom:3px;">기사</span><div style="font-size:.88rem;font-weight:600;color:#1e293b;">하차 — 거래명세표·온도기록지 촬영 → 하차 완료</div><div style="font-size:.76rem;color:#64748b;margin-top:1px;">경유지 있으면 하차지 추가 후 각각 처리 → 모두 완료 시 GPS 자동 종료</div></div>
+                <div style="position:relative;margin-bottom:16px;"><div style="position:absolute;left:-22px;top:3px;width:16px;height:16px;border-radius:50%;background:#0891b2;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.2);"></div><span style="font-size:.7rem;font-weight:700;padding:1px 7px;border-radius:8px;background:#cffafe;color:#0e7490;display:inline-block;margin-bottom:3px;">화주</span><div style="font-size:.88rem;font-weight:600;color:#1e293b;">서류 탭에서 상·하차 사진 확인</div><div style="font-size:.76rem;color:#64748b;margin-top:1px;">거래명세표 · 온도기록지 클릭 시 확대 보기</div></div>
+                <div style="position:relative;margin-bottom:0;"><div style="position:absolute;left:-22px;top:3px;width:16px;height:16px;border-radius:50%;background:#7c3aed;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.2);"></div><span style="font-size:.7rem;font-weight:700;padding:1px 7px;border-radius:8px;background:#ede9fe;color:#6d28d9;display:inline-block;margin-bottom:3px;">관리자</span><div style="font-size:.88rem;font-weight:600;color:#1e293b;">사진 보관함에서 날짜·거래처별 전체 서류 조회</div><div style="font-size:.76rem;color:#64748b;margin-top:1px;">기간 검색, 거래처별 분류</div></div>
+              </div>
+              <div style="background:#eff6ff;color:#1e40af;border-radius:10px;padding:11px 13px;font-size:.81rem;display:flex;gap:8px;margin-top:14px;line-height:1.55;">
+                <i class="fas fa-info-circle" style="margin-top:2px;flex-shrink:0;"></i>
+                <span>배송 상태: <b style="background:#ffedd5;color:#c2410c;padding:1px 7px;border-radius:8px;">대기중</b> → <b style="background:#ffedd5;color:#c2410c;padding:1px 7px;border-radius:8px;">상차완료</b> → <b style="background:#cffafe;color:#0e7490;padding:1px 7px;border-radius:8px;">운송중</b> → <b style="background:#dcfce7;color:#15803d;padding:1px 7px;border-radius:8px;">하차완료</b></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ■ 화주 -->
+          <div id="gPanelCustomer" style="display:none;">
+            <div style="background:#fff;border-radius:14px;margin-bottom:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.06);">
+              <div style="padding:14px 16px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f1f5f9;"><div style="width:38px;height:38px;border-radius:10px;background:#cffafe;color:#0e7490;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;"><i class="fas fa-sign-in-alt"></i></div><div><div style="font-size:.95rem;font-weight:700;color:#0f172a;">1단계 · 룸 접속</div><div style="font-size:.78rem;color:#94a3b8;">관리자에게 받은 URL과 비밀번호로 입장</div></div></div>
+              <div style="padding:14px 16px;">
+                <div style="display:flex;gap:10px;margin-bottom:10px;"><div style="width:26px;height:26px;border-radius:50%;background:#cffafe;color:#0e7490;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;flex-shrink:0;">1</div><div><div style="font-weight:700;font-size:.88rem;color:#1e293b;margin-bottom:2px;">URL로 접속</div><div style="font-size:.81rem;color:#64748b;">관리자에게 받은 링크 클릭 또는, 메인 화면 고객사 카드 → 회사명 선택.</div></div></div>
+                <div style="display:flex;gap:10px;"><div style="width:26px;height:26px;border-radius:50%;background:#cffafe;color:#0e7490;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;flex-shrink:0;">2</div><div><div style="font-weight:700;font-size:.88rem;color:#1e293b;margin-bottom:2px;">룸 비밀번호 입력</div><div style="font-size:.81rem;color:#64748b;">관리자에게 받은 비밀번호 입력 → [입장하기]. 한 번 입장하면 <strong>8시간 자동 유지</strong>됩니다.</div></div></div>
+                <div style="background:#eff6ff;color:#1e40af;border-radius:8px;padding:9px 12px;font-size:.8rem;display:flex;gap:8px;margin-top:12px;"><i class="fas fa-link" style="margin-top:2px;flex-shrink:0;"></i><span>자주 사용한다면 브라우저에 즐겨찾기로 저장해 두세요.</span></div>
+              </div>
+            </div>
+            <div style="background:#fff;border-radius:14px;margin-bottom:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.06);">
+              <div style="padding:14px 16px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f1f5f9;"><div style="width:38px;height:38px;border-radius:10px;background:#cffafe;color:#0e7490;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;"><i class="fas fa-plus-circle"></i></div><div><div style="font-size:.95rem;font-weight:700;color:#0f172a;">2단계 · 배송 등록</div><div style="font-size:.78rem;color:#94a3b8;">출발 전 기사 정보와 PIN을 함께 등록</div></div></div>
+              <div style="padding:14px 16px;">
+                <div style="display:flex;gap:10px;margin-bottom:10px;"><div style="width:26px;height:26px;border-radius:50%;background:#cffafe;color:#0e7490;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;flex-shrink:0;">1</div><div><div style="font-weight:700;font-size:.88rem;color:#1e293b;margin-bottom:2px;">[+ 배송 등록] 버튼 클릭</div><div style="font-size:.81rem;color:#64748b;">배송 목록 우상단의 파란 버튼을 클릭합니다.</div></div></div>
+                <div style="display:flex;gap:10px;margin-bottom:10px;"><div style="width:26px;height:26px;border-radius:50%;background:#cffafe;color:#0e7490;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;flex-shrink:0;">2</div><div><div style="font-weight:700;font-size:.88rem;color:#1e293b;margin-bottom:2px;">기본 정보 입력</div><div style="font-size:.81rem;color:#64748b;">기사명 · 차량번호 · 화물 품목 · 출발지 · 목적지를 입력합니다.</div></div></div>
+                <div style="display:flex;gap:10px;margin-bottom:10px;"><div style="width:26px;height:26px;border-radius:50%;background:#cffafe;color:#0e7490;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;flex-shrink:0;">3</div><div><div style="font-weight:700;font-size:.88rem;color:#1e293b;margin-bottom:2px;">기사 PIN 설정 <span style="background:#fee2e2;color:#991b1b;padding:1px 6px;border-radius:8px;font-size:.72rem;">필수</span></div><div style="font-size:.81rem;color:#64748b;">숫자 4~8자리 PIN. 기사에게 <strong>문자·카톡으로 전달</strong>하세요.</div></div></div>
+                <div style="display:flex;gap:10px;"><div style="width:26px;height:26px;border-radius:50%;background:#cffafe;color:#0e7490;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;flex-shrink:0;">4</div><div><div style="font-weight:700;font-size:.88rem;color:#1e293b;margin-bottom:2px;">[등록] 클릭</div><div style="font-size:.81rem;color:#64748b;">저장 즉시 배송 목록에 나타납니다.</div></div></div>
+                <div style="background:#fffbeb;color:#92400e;border-radius:8px;padding:9px 12px;font-size:.8rem;display:flex;gap:8px;margin-top:12px;"><i class="fas fa-exclamation-triangle" style="margin-top:2px;flex-shrink:0;"></i><span>PIN은 저장 후 확인 불가능합니다. 기사에게 전달 전 메모해 두거나 카톡으로 먼저 보내주세요.</span></div>
+              </div>
+            </div>
+            <div style="background:#fff;border-radius:14px;margin-bottom:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.06);">
+              <div style="padding:14px 16px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f1f5f9;"><div style="width:38px;height:38px;border-radius:10px;background:#cffafe;color:#0e7490;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;"><i class="fas fa-list"></i></div><div><div style="font-size:.95rem;font-weight:700;color:#0f172a;">3단계 · 배송 현황 확인</div><div style="font-size:.78rem;color:#94a3b8;">배송 목록 · GPS 지도 · 서류 사진 탭 활용</div></div></div>
+              <div style="padding:14px 16px;">
+                <div style="font-size:.85rem;font-weight:700;color:#0891b2;margin-bottom:8px;"><i class="fas fa-list" style="margin-right:4px;"></i>배송 탭</div>
+                <div style="font-size:.81rem;color:#64748b;margin-bottom:6px;padding-left:4px;">• 배송 카드 클릭 → 상세 정보(기사·차량·화물·상태·GPS·서류) 확인<br>• 카드 하단 아이콘: <span style="background:#dbeafe;color:#1e40af;padding:1px 6px;border-radius:6px;font-size:.75rem;">파란색=서류있음</span> <span style="background:#e2e8f0;color:#64748b;padding:1px 6px;border-radius:6px;font-size:.75rem;">회색=없음</span><br>• 카드의 <span style="background:#dcfce7;color:#15803d;padding:1px 6px;border-radius:6px;font-size:.75rem;font-weight:700;">📍위치추적</span> 버튼 클릭 시 지도 탭으로 즉시 이동!</div>
+                <div style="height:1px;background:#f1f5f9;margin:10px 0;"></div>
+                <div style="font-size:.85rem;font-weight:700;color:#16a34a;margin-bottom:8px;"><i class="fas fa-map" style="margin-right:4px;"></i>지도 탭</div>
+                <div style="font-size:.81rem;color:#64748b;margin-bottom:6px;padding-left:4px;">• 기사 GPS 실시간 확인. <span style="background:#dcfce7;color:#15803d;padding:1px 6px;border-radius:6px;font-size:.75rem;">초록</span>=5분 이내, <span style="background:#e2e8f0;color:#64748b;padding:1px 6px;border-radius:6px;font-size:.75rem;">회색</span>=오래됨. 30초 자동 갱신.</div>
+                <div style="height:1px;background:#f1f5f9;margin:10px 0;"></div>
+                <div style="font-size:.85rem;font-weight:700;color:#d97706;margin-bottom:8px;"><i class="fas fa-file-image" style="margin-right:4px;"></i>서류 탭</div>
+                <div style="font-size:.81rem;color:#64748b;padding-left:4px;">• 드롭다운에서 배송건 선택 → 상·하차 사진 확인. 사진 클릭 시 확대 가능.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ■ 기사 -->
+          <div id="gPanelDriver" style="display:none;">
+            <div style="background:#fff;border-radius:14px;margin-bottom:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.06);">
+              <div style="padding:14px 16px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f1f5f9;"><div style="width:38px;height:38px;border-radius:10px;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;"><i class="fas fa-key"></i></div><div><div style="font-size:.95rem;font-weight:700;color:#0f172a;">1단계 · 로그인</div><div style="font-size:.78rem;color:#94a3b8;">고객사에서 받은 이름과 PIN으로 접속</div></div></div>
+              <div style="padding:14px 16px;">
+                <div style="display:flex;gap:10px;margin-bottom:10px;"><div style="width:26px;height:26px;border-radius:50%;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;flex-shrink:0;">1</div><div><div style="font-weight:700;font-size:.88rem;color:#1e293b;margin-bottom:2px;">기사 업무 화면 접속</div><div style="font-size:.81rem;color:#64748b;">메인 화면 기사 카드 클릭 또는 QR 코드 스캔.</div></div></div>
+                <div style="display:flex;gap:10px;margin-bottom:10px;"><div style="width:26px;height:26px;border-radius:50%;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;flex-shrink:0;">2</div><div><div style="font-weight:700;font-size:.88rem;color:#1e293b;margin-bottom:2px;">이름 + PIN 입력</div><div style="font-size:.81rem;color:#64748b;">화주가 등록한 <strong>기사 이름</strong>과 <strong>PIN</strong>을 입력합니다. 이름은 공백 없이 정확히 일치해야 합니다.</div></div></div>
+                <div style="display:flex;gap:10px;"><div style="width:26px;height:26px;border-radius:50%;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;flex-shrink:0;">3</div><div><div style="font-weight:700;font-size:.88rem;color:#1e293b;margin-bottom:2px;">배송건 선택 → [업무 시작]</div><div style="font-size:.81rem;color:#64748b;">배송건 선택 후 [업무 시작] → GPS가 자동으로 켜집니다.</div></div></div>
+                <div style="background:#f0fdf4;color:#15803d;border-radius:8px;padding:9px 12px;font-size:.8rem;display:flex;gap:8px;margin-top:12px;"><i class="fas fa-clock" style="margin-top:2px;flex-shrink:0;"></i><span>로그인 상태는 <strong>12시간 유지</strong>됩니다. 앱을 닫았다 열어도 자동으로 이어집니다.</span></div>
+              </div>
+            </div>
+            <div style="background:#fff;border-radius:14px;margin-bottom:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.06);">
+              <div style="padding:14px 16px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f1f5f9;"><div style="width:38px;height:38px;border-radius:10px;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;"><i class="fas fa-arrow-up"></i></div><div><div style="font-size:.95rem;font-weight:700;color:#0f172a;">2단계 · 상차 완료 처리</div><div style="font-size:.78rem;color:#94a3b8;">서류 촬영 → 자동 업로드 → 상차 완료</div></div></div>
+              <div style="padding:14px 16px;">
+                <div style="display:flex;gap:10px;margin-bottom:10px;"><div style="width:26px;height:26px;border-radius:50%;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;flex-shrink:0;">1</div><div><div style="font-weight:700;font-size:.88rem;color:#1e293b;margin-bottom:2px;">거래명세표 촬영</div><div style="font-size:.81rem;color:#64748b;">[촬영/선택] 버튼 → 카메라 촬영 또는 갤러리 선택. 선택 즉시 <strong>자동 업로드</strong>됩니다.</div></div></div>
+                <div style="display:flex;gap:10px;margin-bottom:10px;"><div style="width:26px;height:26px;border-radius:50%;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;flex-shrink:0;">2</div><div><div style="font-weight:700;font-size:.88rem;color:#1e293b;margin-bottom:2px;">온도기록지 촬영</div><div style="font-size:.81rem;color:#64748b;">동일하게 촬영. 업로드 완료 후 주황색 [수정] 버튼 표시.</div></div></div>
+                <div style="display:flex;gap:10px;"><div style="width:26px;height:26px;border-radius:50%;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;flex-shrink:0;">3</div><div><div style="font-weight:700;font-size:.88rem;color:#1e293b;margin-bottom:2px;">[상차 완료 처리] 클릭</div><div style="font-size:.81rem;color:#64748b;">노란색 버튼 클릭 → 배송 상태가 운송중으로 변경됩니다.</div></div></div>
+                <div style="background:#fffbeb;color:#92400e;border-radius:8px;padding:9px 12px;font-size:.8rem;display:flex;gap:8px;margin-top:12px;"><i class="fas fa-redo" style="margin-top:2px;flex-shrink:0;"></i><span>잘못 촬영했으면 [수정] 버튼을 눌러 다시 찍으면 됩니다.</span></div>
+              </div>
+            </div>
+            <div style="background:#fff;border-radius:14px;margin-bottom:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.06);">
+              <div style="padding:14px 16px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f1f5f9;"><div style="width:38px;height:38px;border-radius:10px;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;"><i class="fas fa-arrow-down"></i></div><div><div style="font-size:.95rem;font-weight:700;color:#0f172a;">3단계 · 하차 완료 처리</div><div style="font-size:.78rem;color:#94a3b8;">목적지 도착 후 서류 촬영 및 완료 처리</div></div></div>
+              <div style="padding:14px 16px;">
+                <div style="display:flex;gap:10px;margin-bottom:10px;"><div style="width:26px;height:26px;border-radius:50%;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;flex-shrink:0;">1</div><div><div style="font-weight:700;font-size:.88rem;color:#1e293b;margin-bottom:2px;">하차 1 섹션 확인</div><div style="font-size:.81rem;color:#64748b;">상차 섹션 아래에 하차 1 섹션이 자동 생성되어 있습니다.</div></div></div>
+                <div style="display:flex;gap:10px;margin-bottom:10px;"><div style="width:26px;height:26px;border-radius:50%;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;flex-shrink:0;">2</div><div><div style="font-weight:700;font-size:.88rem;color:#1e293b;margin-bottom:2px;">거래명세표·온도기록지 촬영</div><div style="font-size:.81rem;color:#64748b;">상차와 동일하게 촬영 즉시 자동 업로드됩니다.</div></div></div>
+                <div style="display:flex;gap:10px;"><div style="width:26px;height:26px;border-radius:50%;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;flex-shrink:0;">3</div><div><div style="font-weight:700;font-size:.88rem;color:#1e293b;margin-bottom:2px;">[하차 완료 처리] 클릭</div><div style="font-size:.81rem;color:#64748b;">초록 버튼 클릭. 모든 하차 완료 시 배송완료로 변경되고 <strong>GPS가 자동 종료</strong>됩니다.</div></div></div>
+              </div>
+            </div>
+            <div style="background:#fff;border-radius:14px;margin-bottom:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.06);">
+              <div style="padding:14px 16px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f1f5f9;"><div style="width:38px;height:38px;border-radius:10px;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;"><i class="fas fa-code-branch"></i></div><div><div style="font-size:.95rem;font-weight:700;color:#0f172a;">경유 하차 처리 (여러 목적지)</div><div style="font-size:.78rem;color:#94a3b8;">1건 배송에서 여러 곳에 하차할 때</div></div></div>
+              <div style="padding:14px 16px;">
+                <div style="display:flex;gap:10px;margin-bottom:10px;"><div style="width:26px;height:26px;border-radius:50%;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;flex-shrink:0;">1</div><div><div style="font-weight:700;font-size:.88rem;color:#1e293b;margin-bottom:2px;">[+ 경유 하차지 추가] 클릭</div><div style="font-size:.81rem;color:#64748b;">하차 섹션 아래 파란 점선 버튼 → 하차 2, 3... 추가됩니다.</div></div></div>
+                <div style="display:flex;gap:10px;margin-bottom:10px;"><div style="width:26px;height:26px;border-radius:50%;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;flex-shrink:0;">2</div><div><div style="font-weight:700;font-size:.88rem;color:#1e293b;margin-bottom:2px;">하차지 이름 변경 (선택)</div><div style="font-size:.81rem;color:#64748b;">"1차 납품처", "ABC마트" 등 구체적인 이름으로 변경 가능합니다.</div></div></div>
+                <div style="display:flex;gap:10px;"><div style="width:26px;height:26px;border-radius:50%;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;flex-shrink:0;">3</div><div><div style="font-weight:700;font-size:.88rem;color:#1e293b;margin-bottom:2px;">각 하차지별 처리</div><div style="font-size:.81rem;color:#64748b;">각 하차지 도착 시 사진 촬영 후 [하차 완료]. 모두 완료 시 GPS 자동 종료.</div></div></div>
+                <div style="background:#eff6ff;color:#1e40af;border-radius:8px;padding:9px 12px;font-size:.8rem;display:flex;gap:8px;margin-top:12px;"><i class="fas fa-trash" style="margin-top:2px;flex-shrink:0;"></i><span>잘못 추가한 경유지는 우측 상단 [X 삭제] 버튼으로 제거할 수 있습니다.</span></div>
+              </div>
+            </div>
+            <div style="background:#fff;border-radius:14px;margin-bottom:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.06);">
+              <div style="padding:14px 16px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f1f5f9;"><div style="width:38px;height:38px;border-radius:10px;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;"><i class="fas fa-location-arrow"></i></div><div><div style="font-size:.95rem;font-weight:700;color:#0f172a;">GPS 위치 공유</div><div style="font-size:.78rem;color:#94a3b8;">화주가 실시간으로 위치를 확인합니다</div></div></div>
+              <div style="padding:14px 16px;">
+                <div style="font-size:.81rem;color:#64748b;margin-bottom:6px;padding-left:4px;">✅ 업무 시작 시 GPS 자동 켜짐 — 브라우저 위치 권한을 <strong>허용</strong>해 주세요.<br>✅ 모든 하차지 완료 전까지 GPS 유지 — 신호 끊기면 5초 후 자동 재연결.<br>✅ 하차 완료 시 GPS 자동 종료.</div>
+                <div style="background:#fffbeb;color:#92400e;border-radius:8px;padding:9px 12px;font-size:.8rem;display:flex;gap:8px;margin-top:8px;"><i class="fas fa-mobile-alt" style="margin-top:2px;flex-shrink:0;"></i><span>화면을 꺼도 GPS는 계속 작동합니다. 브라우저를 <strong>백그라운드로 유지</strong>해 주세요.</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ■ 관리자 -->
+          <div id="gPanelAdmin" style="display:none;">
+            <div style="background:#fff;border-radius:14px;margin-bottom:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.06);">
+              <div style="padding:14px 16px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f1f5f9;"><div style="width:38px;height:38px;border-radius:10px;background:#ede9fe;color:#6d28d9;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;"><i class="fas fa-shield-alt"></i></div><div><div style="font-size:.95rem;font-weight:700;color:#0f172a;">관리자 로그인</div><div style="font-size:.78rem;color:#94a3b8;">admin.html — 비밀번호로 접속</div></div></div>
+              <div style="padding:14px 16px;font-size:.81rem;color:#64748b;">메인 화면 관리자 카드 클릭 → 비밀번호 입력. 로그인 후 <strong>4시간</strong> 세션 유지됩니다.</div>
+            </div>
+            <div style="background:#fff;border-radius:14px;margin-bottom:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.06);">
+              <div style="padding:14px 16px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f1f5f9;"><div style="width:38px;height:38px;border-radius:10px;background:#ede9fe;color:#6d28d9;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;"><i class="fas fa-building"></i></div><div><div style="font-size:.95rem;font-weight:700;color:#0f172a;">고객사 룸 관리</div><div style="font-size:.78rem;color:#94a3b8;">화주별 룸 생성·수정·삭제</div></div></div>
+              <div style="padding:14px 16px;">
+                <div style="display:flex;gap:10px;margin-bottom:10px;"><div style="width:26px;height:26px;border-radius:50%;background:#ede9fe;color:#6d28d9;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;flex-shrink:0;">1</div><div><div style="font-weight:700;font-size:.88rem;color:#1e293b;margin-bottom:2px;">룸 생성</div><div style="font-size:.81rem;color:#64748b;">[+ 룸 추가] → 룸 이름(회사명)·비밀번호·설명·연락처 입력 → [저장]</div></div></div>
+                <div style="display:flex;gap:10px;margin-bottom:10px;"><div style="width:26px;height:26px;border-radius:50%;background:#ede9fe;color:#6d28d9;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;flex-shrink:0;">2</div><div><div style="font-weight:700;font-size:.88rem;color:#1e293b;margin-bottom:2px;">화주에게 전달</div><div style="font-size:.81rem;color:#64748b;">생성된 룸의 URL과 비밀번호를 화주 담당자에게 전달. QR 페이지에서 QR 공유 가능.</div></div></div>
+                <div style="display:flex;gap:10px;"><div style="width:26px;height:26px;border-radius:50%;background:#ede9fe;color:#6d28d9;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;flex-shrink:0;">3</div><div><div style="font-weight:700;font-size:.88rem;color:#1e293b;margin-bottom:2px;">수정 · 삭제</div><div style="font-size:.81rem;color:#64748b;">룸 목록에서 수정/삭제 버튼으로 관리합니다.</div></div></div>
+              </div>
+            </div>
+            <div style="background:#fff;border-radius:14px;margin-bottom:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.06);">
+              <div style="padding:14px 16px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f1f5f9;"><div style="width:38px;height:38px;border-radius:10px;background:#ede9fe;color:#6d28d9;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;"><i class="fas fa-images"></i></div><div><div style="font-size:.95rem;font-weight:700;color:#0f172a;">사진 보관함</div><div style="font-size:.78rem;color:#94a3b8;">날짜·거래처별 서류 사진 통합 조회</div></div></div>
+              <div style="padding:14px 16px;font-size:.81rem;color:#64748b;">관리자 헤더 [사진 보관함] 클릭 또는 메인 화면 사진 보관함 카드 클릭.<br>거래처·날짜 범위·기사명·서류 유형으로 검색. 날짜별·거래처별·전체 그리드 3가지 뷰.</div>
+            </div>
+
+          <!-- ■ FAQ -->
+          <div id="gPanelFaq" style="display:none;">
+            <div style="background:#fff;border-radius:14px;padding:18px;box-shadow:0 4px 20px rgba(0,0,0,.06);">
+              <h3 style="font-size:.95rem;font-weight:700;margin-bottom:14px;color:#0f172a;"><i class="fas fa-question-circle" style="color:#d97706;margin-right:6px;"></i>자주 묻는 질문</h3>
+              <div class="gfaq" style="border:1.5px solid #e2e8f0;border-radius:10px;margin-bottom:8px;overflow:hidden;"><div onclick="gFaqToggle(this)" style="padding:12px 15px;font-weight:600;font-size:.86rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;color:#0f172a;background:#fff;user-select:none;">🔑 PIN을 잊어버렸어요 / PIN이 틀렸다고 나와요<i class="fas fa-chevron-down" style="color:#94a3b8;font-size:.75rem;transition:transform .2s;flex-shrink:0;"></i></div><div style="display:none;padding:0 15px 12px;font-size:.81rem;color:#64748b;line-height:1.6;border-top:1px solid #f1f5f9;background:#f8fafc;">PIN은 저장 후 확인 불가능합니다. 화주(고객사) 담당자에게 연락해서 배송을 삭제하고 새로 등록(새 PIN 설정)해 달라고 요청하세요.</div></div>
+              <div class="gfaq" style="border:1.5px solid #e2e8f0;border-radius:10px;margin-bottom:8px;overflow:hidden;"><div onclick="gFaqToggle(this)" style="padding:12px 15px;font-weight:600;font-size:.86rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;color:#0f172a;background:#fff;user-select:none;">🚛 배송건이 목록에 안 보여요<i class="fas fa-chevron-down" style="color:#94a3b8;font-size:.75rem;transition:transform .2s;flex-shrink:0;"></i></div><div style="display:none;padding:0 15px 12px;font-size:.81rem;color:#64748b;line-height:1.6;border-top:1px solid #f1f5f9;background:#f8fafc;">① 이름 확인: 화주가 등록한 이름과 정확히 일치해야 합니다.<br>② 이미 완료됨: 하차완료 배송은 목록 맨 아래에 ✅ 표시로 보입니다.<br>③ PIN 불일치: PIN이 맞지 않으면 조회되지 않습니다.</div></div>
+              <div class="gfaq" style="border:1.5px solid #e2e8f0;border-radius:10px;margin-bottom:8px;overflow:hidden;"><div onclick="gFaqToggle(this)" style="padding:12px 15px;font-weight:600;font-size:.86rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;color:#0f172a;background:#fff;user-select:none;">📸 사진이 업로드가 안 돼요<i class="fas fa-chevron-down" style="color:#94a3b8;font-size:.75rem;transition:transform .2s;flex-shrink:0;"></i></div><div style="display:none;padding:0 15px 12px;font-size:.81rem;color:#64748b;line-height:1.6;border-top:1px solid #f1f5f9;background:#f8fafc;">① 인터넷 연결 확인<br>② 브라우저 카메라 권한 허용 확인<br>③ 실패 시 토스트 메시지 확인 후 [수정] 버튼으로 재촬영</div></div>
+              <div class="gfaq" style="border:1.5px solid #e2e8f0;border-radius:10px;margin-bottom:8px;overflow:hidden;"><div onclick="gFaqToggle(this)" style="padding:12px 15px;font-weight:600;font-size:.86rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;color:#0f172a;background:#fff;user-select:none;">📍 GPS가 작동하지 않아요<i class="fas fa-chevron-down" style="color:#94a3b8;font-size:.75rem;transition:transform .2s;flex-shrink:0;"></i></div><div style="display:none;padding:0 15px 12px;font-size:.81rem;color:#64748b;line-height:1.6;border-top:1px solid #f1f5f9;background:#f8fafc;">① 위치 권한 허용 확인 (iOS: 설정→Safari→위치, Android: 크롬설정→사이트설정→위치)<br>② 실내 환경: 신호 약함 → 5초 후 자동 재시도<br>③ 헤더에 GPS 켜짐 표시 확인</div></div>
+              <div class="gfaq" style="border:1.5px solid #e2e8f0;border-radius:10px;margin-bottom:8px;overflow:hidden;"><div onclick="gFaqToggle(this)" style="padding:12px 15px;font-weight:600;font-size:.86rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;color:#0f172a;background:#fff;user-select:none;">🗺️ 지도에 기사 위치가 안 보여요<i class="fas fa-chevron-down" style="color:#94a3b8;font-size:.75rem;transition:transform .2s;flex-shrink:0;"></i></div><div style="display:none;padding:0 15px 12px;font-size:.81rem;color:#64748b;line-height:1.6;border-top:1px solid #f1f5f9;background:#f8fafc;">① 기사가 GPS를 켜지 않았거나 권한 거부된 경우<br>② 운송중 또는 상차완료 상태일 때만 지도에 표시됩니다.<br>③ 30초마다 갱신 — 자동 갱신 토글을 켜두세요.</div></div>
+              <div class="gfaq" style="border:1.5px solid #e2e8f0;border-radius:10px;margin-bottom:8px;overflow:hidden;"><div onclick="gFaqToggle(this)" style="padding:12px 15px;font-weight:600;font-size:.86rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;color:#0f172a;background:#fff;user-select:none;">🏢 고객사 룸 비밀번호를 바꾸고 싶어요<i class="fas fa-chevron-down" style="color:#94a3b8;font-size:.75rem;transition:transform .2s;flex-shrink:0;"></i></div><div style="display:none;padding:0 15px 12px;font-size:.81rem;color:#64748b;line-height:1.6;border-top:1px solid #f1f5f9;background:#f8fafc;">관리자 페이지 → 고객사 관리 탭 → 해당 룸 [수정] 클릭 → 새 비밀번호 입력 후 저장. 변경 후 화주에게 새 비밀번호를 전달하세요.</div></div>
+              <div class="gfaq" style="border:1.5px solid #e2e8f0;border-radius:10px;margin-bottom:8px;overflow:hidden;"><div onclick="gFaqToggle(this)" style="padding:12px 15px;font-weight:600;font-size:.86rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;color:#0f172a;background:#fff;user-select:none;">🔄 화면이 바뀌지 않거나 오래된 화면이 보여요<i class="fas fa-chevron-down" style="color:#94a3b8;font-size:.75rem;transition:transform .2s;flex-shrink:0;"></i></div><div style="display:none;padding:0 15px 12px;font-size:.81rem;color:#64748b;line-height:1.6;border-top:1px solid #f1f5f9;background:#f8fafc;">브라우저 캐시 문제입니다. 강제 새로고침:<br>• PC: Ctrl+Shift+R (Win) / Cmd+Shift+R (Mac)<br>• 모바일: 브라우저 설정 → 캐시 삭제 후 재접속</div></div>
+              <div class="gfaq" style="border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden;"><div onclick="gFaqToggle(this)" style="padding:12px 15px;font-weight:600;font-size:.86rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;color:#0f172a;background:#fff;user-select:none;">📂 서류 사진을 다운로드하고 싶어요<i class="fas fa-chevron-down" style="color:#94a3b8;font-size:.75rem;transition:transform .2s;flex-shrink:0;"></i></div><div style="display:none;padding:0 15px 12px;font-size:.81rem;color:#64748b;line-height:1.6;border-top:1px solid #f1f5f9;background:#f8fafc;">사진 보관함 또는 서류 탭에서 사진을 꾹 눌러서(모바일) 또는 우클릭(PC) → 이미지 저장으로 다운로드할 수 있습니다.</div></div>
+            </div>
+          </div>
+
+        </div><!-- /본문 -->
+      </div>
+    </div>
+
+    <script>
+    /* ===== 사용법 모달 ===== */
+    function openGuide() {
+        var modal = document.getElementById('guideModal');
+        if (!modal) { console.error('guideModal not found'); return; }
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+        gTab('overview');
+    }
+    function closeGuide() {
+        var modal = document.getElementById('guideModal');
+        if (modal) modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+    // 모달 백드롭 클릭 시 닫기
+    document.addEventListener('DOMContentLoaded', function() {
+        var modal = document.getElementById('guideModal');
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) closeGuide();
+            });
+        }
+        // 사용법 버튼에 이벤트 직접 바인딩 (onclick 속성 보조)
+        var btn = document.getElementById('btnOpenGuide');
+        if (btn && !btn.dataset.bound) {
+            btn.dataset.bound = '1';
+            btn.addEventListener('click', openGuide);
+        }
+    });
+    const gTabs = ['overview','customer','driver','admin','faq'];
+    const gColors = { overview:'#0891b2', customer:'#0891b2', driver:'#16a34a', admin:'#7c3aed', faq:'#d97706' };
+    function gTab(tab) {
+        gTabs.forEach(t => {
+            const btn = document.getElementById('gTab' + t.charAt(0).toUpperCase() + t.slice(1));
+            const panel = document.getElementById('gPanel' + t.charAt(0).toUpperCase() + t.slice(1));
+            if (btn) { btn.style.color = t===tab ? gColors[tab] : '#64748b'; btn.style.borderBottomColor = t===tab ? gColors[tab] : 'transparent'; btn.style.fontWeight = t===tab ? '700' : '600'; }
+            if (panel) panel.style.display = t===tab ? 'block' : 'none';
+        });
+        const modal = document.querySelector('#guideModal > div');
+        if (modal) modal.scrollTop = 0;
+    }
+    function gFaqToggle(el) {
+        const ans = el.nextElementSibling;
+        const icon = el.querySelector('i');
+        const isOpen = ans.style.display === 'block';
+        document.querySelectorAll('.gfaq > div:last-child').forEach(a => a.style.display = 'none');
+        document.querySelectorAll('.gfaq > div:first-child i').forEach(i => i.style.transform = '');
+        if (!isOpen) { ans.style.display = 'block'; if(icon) icon.style.transform = 'rotate(180deg)'; }
+    }
+    </script>
+
+    <script src="js/utils.js?v=20250320I"></script>
+    <script src="js/main.js?v=20250320I"></script>
+</body>
+</html>

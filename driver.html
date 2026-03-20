@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>기사 업무 화면 - 화물운송 관리 시스템</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css?v=20250314J">
+    <link rel="stylesheet" href="css/driver.css?v=20250320P">
+    <style>
+        @keyframes fadeInDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
+        .ab-temp-notice { animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+    </style>
+</head>
+<body class="driver-body">
+
+    <!-- Header -->
+    <header class="driver-header">
+        <div class="header-content">
+            <div class="logo">
+                <a href="index.html"><i class="fas fa-arrow-left"></i></a>
+                <span><i class="fas fa-truck"></i> 기사 업무 화면</span>
+            </div>
+            <div id="gpsStatus" class="gps-status gps-off">
+                <i class="fas fa-location-arrow"></i> GPS 꺼짐
+            </div>
+        </div>
+    </header>
+
+    <!-- GPS 유지 안내 배너 (업무 중 표시) -->
+    <div id="gpsKeepBanner" style="display:none; background:linear-gradient(90deg,#0f172a,#1e3a5f); border-bottom:2px solid #3b82f6; padding:10px 16px; font-size:0.81rem; color:#e2e8f0; text-align:center; position:sticky; top:64px; z-index:99; line-height:1.7;">
+        <i class="fas fa-satellite-dish" style="color:#38bdf8;"></i>
+        <strong style="color:#fff;">GPS 전송 중</strong> —
+        네비를 켜려면 <strong style="color:#fbbf24;">이 창을 백그라운드</strong>로 보내세요 (홈버튼 or 앱전환).
+        창을 <strong style="color:#f87171;">닫으면 GPS 중단</strong>됩니다.
+        <span id="bgGpsCounter" style="display:none; margin-left:6px; background:rgba(56,189,248,0.2); border-radius:10px; padding:1px 8px; color:#38bdf8; font-weight:700;"></span>
+    </div>
+
+    <!-- ① PIN 로그인 화면 -->
+    <div class="driver-login" id="driverPinSection">
+        <div class="driver-login-card">
+            <div class="driver-login-icon">
+                <i class="fas fa-key"></i>
+            </div>
+            <h2>기사 PIN 로그인</h2>
+            <p>배송 등록 시 부여받은 이름과 PIN 코드를 입력하세요</p>
+
+            <form id="driverPinForm">
+                <div class="form-group">
+                    <label><i class="fas fa-user"></i> 기사 이름 <span class="required">*</span></label>
+                    <input type="text" id="pinDriverName" placeholder="예: 홍길동" required autocomplete="off" maxlength="30" />
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-key"></i> PIN 코드 <span class="required">*</span></label>
+                    <div class="pin-input-wrap">
+                        <input type="password" id="pinCode" placeholder="숫자 4~8자리"
+                            inputmode="numeric" minlength="4" maxlength="8" pattern="\d{4,8}" required autocomplete="off"
+                            title="숫자 4~8자리 PIN을 입력해주세요"/>
+                        <button type="button" class="toggle-pw" onclick="togglePassword('pinCode')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="driverPinError" class="error-msg" style="display:none;"></div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-sign-in-alt"></i> 로그인
+                </button>
+            </form>
+
+            <div class="pin-guide">
+                <i class="fas fa-info-circle"></i>
+                PIN 코드는 고객사 담당자에게 문의하세요
+            </div>
+        </div>
+    </div>
+
+    <!-- ② 배송건 선택 화면 -->
+    <div class="driver-login" id="driverSelectSection" style="display:none;">
+        <div class="driver-login-card">
+            <div class="driver-login-icon" style="background:#dcfce7;">
+                <i class="fas fa-list-check" style="color:var(--success);"></i>
+            </div>
+            <div class="driver-welcome">
+                <h2 id="welcomeDriverName">기사님 환영합니다</h2>
+                <p id="welcomeVehicle" style="color:var(--gray-500); font-size:0.9rem;"></p>
+            </div>
+
+            <div class="form-group" style="margin-top:20px;">
+                <label><i class="fas fa-truck"></i> 배송건 선택 <span class="required">*</span></label>
+                <select id="selectDelivery">
+                    <option value="">-- 배송건 선택 --</option>
+                </select>
+            </div>
+
+            <div id="driverSelectError" class="error-msg" style="display:none;"></div>
+
+            <button class="btn btn-primary btn-block" id="btnStartWork">
+                <i class="fas fa-play-circle"></i> 업무 시작
+            </button>
+            <button class="btn btn-outline btn-block" id="btnPinLogout" style="margin-top:10px;">
+                <i class="fas fa-sign-out-alt"></i> 로그아웃
+            </button>
+        </div>
+    </div>
+
+    <!-- ③ 실제 업무 화면 -->
+    <div class="driver-work" id="driverWorkSection" style="display:none;">
+
+        <!-- 배송 정보 카드 -->
+        <div class="delivery-info-card">
+            <div class="delivery-info-header">
+                <div>
+                    <h2 id="workDriverName"><i class="fas fa-user"></i> -</h2>
+                    <p id="workVehicle"><i class="fas fa-car"></i> -</p>
+                </div>
+                <div class="delivery-status-badge" id="workStatusBadge">-</div>
+            </div>
+            <div class="delivery-info-body">
+                <div class="info-item">
+                    <i class="fas fa-box"></i>
+                    <div>
+                        <span class="info-label">화물</span>
+                        <span class="info-value" id="workCargo">-</span>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-route"></i>
+                    <div>
+                        <span class="info-label">구간</span>
+                        <span class="info-value" id="workRoute">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GPS 공유 -->
+        <div class="work-section">
+            <div class="section-title">
+                <i class="fas fa-map-marker-alt"></i> GPS 위치 공유
+            </div>
+            <div class="gps-control-card">
+                <div class="gps-info">
+                    <div id="gpsCoords" class="gps-coords">위치 정보 없음</div>
+                    <div id="gpsAccuracy" class="gps-accuracy"></div>
+                    <div id="gpsLastUpdate" class="gps-last-update"></div>
+                </div>
+                <div class="gps-buttons">
+                    <button class="btn btn-success btn-lg" id="btnStartGPS">
+                        <i class="fas fa-location-arrow"></i> GPS 시작
+                    </button>
+                    <button class="btn btn-danger btn-lg" id="btnStopGPS" style="display:none;">
+                        <i class="fas fa-stop-circle"></i> GPS 중지
+                    </button>
+                </div>
+                <!-- GPS 자동 유지 안내 -->
+                <div id="gpsKeepAliveNotice" style="display:none;margin-top:8px;font-size:0.78rem;
+                     color:#86efac;text-align:center;padding:6px 10px;
+                     background:rgba(22,163,74,0.12);border-radius:8px;">
+                    <i class="fas fa-lock"></i> 모든 하차 완료 시 GPS가 자동 종료됩니다
+                </div>
+            </div>
+        </div>
+
+        <!-- ★ 상차 완료 서류 — 촬영 즉시 자동업로드, 수정 버튼 지원 -->
+        <div class="work-section">
+            <div class="section-title">
+                <i class="fas fa-arrow-up" style="color:var(--warning);"></i> 상차 완료 서류 업로드
+                <span class="section-badge loading-badge" id="loadingBadge">대기중</span>
+            </div>
+            <div class="upload-grid">
+
+                <!-- 거래명세표 -->
+                <div class="upload-card" id="loadingInvoiceCard">
+                    <div class="upload-preview" id="loadingInvoicePreview">
+                        <i class="fas fa-file-invoice"></i>
+                        <p>거래명세표</p>
+                        <span>사진 없음</span>
+                    </div>
+                    <div class="upload-actions" id="loadingInvoiceActions">
+                        <div class="file-btn-wrap" id="loadingInvoiceLabel">
+                            <span class="btn btn-outline btn-sm upload-label">
+                                <i class="fas fa-camera"></i> 촬영/선택
+                            </span>
+                            <input type="file" id="loadingInvoiceInput" accept="image/*" class="file-overlay-input" />
+                        </div>
+                        <button class="btn btn-outline btn-sm edit-photo-btn" id="loadingInvoiceEditBtn"
+                            style="display:none;" onclick="triggerLoadingRePhoto('invoice')">
+                            <i class="fas fa-redo"></i> 수정
+                        </button>
+                    </div>
+                    <div class="upload-status" id="loadingInvoiceStatus"></div>
+                </div>
+
+                <!-- 온도기록지 -->
+                <div class="upload-card" id="loadingTempCard">
+                    <div class="upload-preview" id="loadingTempPreview">
+                        <i class="fas fa-thermometer-half"></i>
+                        <p>온도기록지</p>
+                        <span>사진 없음</span>
+                    </div>
+                    <div class="upload-actions" id="loadingTempActions">
+                        <div class="file-btn-wrap" id="loadingTempLabel">
+                            <span class="btn btn-outline btn-sm upload-label">
+                                <i class="fas fa-camera"></i> 촬영/선택
+                            </span>
+                            <input type="file" id="loadingTempInput" accept="image/*" class="file-overlay-input" />
+                        </div>
+                        <button class="btn btn-outline btn-sm edit-photo-btn" id="loadingTempEditBtn"
+                            style="display:none;" onclick="triggerLoadingRePhoto('temp')">
+                            <i class="fas fa-redo"></i> 수정
+                        </button>
+                    </div>
+                    <div class="upload-status" id="loadingTempStatus"></div>
+                </div>
+
+            </div>
+
+            <!-- ★ 추가 사진 (물품/현장 사진 등) -->
+            <div id="loadingExtraPhotosSection">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0 6px;">
+                    <span style="font-size:0.82rem;font-weight:600;color:#475569;">
+                        <i class="fas fa-images" style="color:#6366f1;"></i> 추가 사진
+                        <span id="loadingExtraCount" style="font-size:0.75rem;color:#94a3b8;margin-left:4px;">(0장)</span>
+                    </span>
+                    <div class="file-btn-wrap">
+                        <span class="btn btn-outline btn-sm" style="font-size:0.78rem;padding:4px 10px;border-color:#6366f1;color:#6366f1;">
+                            <i class="fas fa-plus"></i> 사진 추가
+                        </span>
+                        <input type="file" id="loadingExtraInput" accept="image/*" multiple class="file-overlay-input" />
+                    </div>
+                </div>
+                <div id="loadingExtraGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;"></div>
+            </div>
+
+            <button class="btn btn-warning btn-block" id="btnMarkLoaded" style="margin-top:12px;">
+                <i class="fas fa-check-circle"></i> 상차 완료 처리
+            </button>
+            <!-- 상차완료 후 취소 버튼 (숨겨져 있다가 상차완료 시 표시) -->
+            <button class="btn btn-block" id="btnCancelLoaded" style="display:none;
+                background:#fff3cd;color:#856404;border:1.5px solid #ffc107;margin-top:6px;border-radius:10px;">
+                <i class="fas fa-undo-alt"></i> 상차 취소 (상차 전으로 되돌리기)
+            </button>
+        </div>
+
+        <!-- ★ 하차 완료 서류 — 동적 렌더링 (경유 지원) -->
+        <div id="stopsContainer"></div>
+
+        <!-- 경유 하차지 추가 버튼 -->
+        <div class="work-section" style="padding:12px 16px;">
+            <button class="btn btn-outline btn-block" id="btnAddStop"
+                style="border-style:dashed; color:#0891b2; border-color:#0891b2;">
+                <i class="fas fa-plus-circle"></i> 경유 하차지 추가
+            </button>
+        </div>
+
+        <!-- 하단 버튼 -->
+        <div class="work-section">
+            <button class="btn btn-outline btn-block" id="btnChangeDelivery">
+                <i class="fas fa-exchange-alt"></i> 다른 배송건 선택
+            </button>
+            <button class="btn btn-outline btn-block" id="btnWorkLogout"
+                style="margin-top:8px; color:var(--danger); border-color:var(--danger);">
+                <i class="fas fa-sign-out-alt"></i> 로그아웃
+            </button>
+        </div>
+
+    </div><!-- /driverWorkSection -->
+
+    <div class="toast" id="toast"></div>
+
+    <script src="js/utils.js?v=20250320P"></script>
+    <script src="js/driver.js?v=20250320P"></script>
+</body>
+</html>

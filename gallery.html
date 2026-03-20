@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>사진 보관함 - 화물운송 관리 시스템</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css?v=20250314A">
+    <style>
+        /* ============================
+           갤러리 전용 스타일
+        ============================ */
+        :root {
+            --primary: #2563eb;
+            --primary-light: #eff6ff;
+            --success: #16a34a;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-400: #94a3b8;
+            --gray-500: #64748b;
+            --gray-700: #334155;
+            --gray-900: #0f172a;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: #f1f5f9;
+            color: var(--gray-700);
+            min-height: 100vh;
+        }
+
+        /* 헤더 */
+        .gallery-header {
+            background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+            color: white;
+            padding: 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 12px rgba(37,99,235,0.3);
+        }
+        .gallery-header .header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .gallery-header .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        .gallery-header .logo a {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            font-size: 1rem;
+            padding: 6px 10px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+        .gallery-header .logo a:hover { background: rgba(255,255,255,0.15); }
+        .header-actions { display: flex; gap: 8px; align-items: center; }
+        .header-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+        }
+
+        /* 관리자 로그인 게이트 */
+        .admin-gate {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: calc(100vh - 60px);
+            padding: 20px;
+        }
+        .gate-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 36px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .gate-icon {
+            width: 72px; height: 72px;
+            background: var(--primary-light);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 2rem;
+            color: var(--primary);
+        }
+        .gate-card h2 { font-size: 1.4rem; margin-bottom: 8px; color: var(--gray-900); }
+        .gate-card p { color: var(--gray-500); font-size: 0.9rem; margin-bottom: 28px; }
+
+        /* 메인 레이아웃 */
+        .gallery-main { max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
+
+        /* 필터 패널 */
+        .filter-panel {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .filter-panel h3 {
+            font-size: 0.95rem;
+            color: var(--gray-500);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .filter-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr auto;
+            gap: 10px;
+            align-items: end;
+        }
+        @media (max-width: 768px) {
+            .filter-row { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 480px) {
+            .filter-row { grid-template-columns: 1fr; }
+        }
+        .filter-group label {
+            display: block;
+            font-size: 0.82rem;
+            color: var(--gray-500);
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        .filter-group select,
+        .filter-group input[type="date"],
+        .filter-group input[type="text"] {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1.5px solid var(--gray-200);
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.88rem;
+            color: var(--gray-700);
+            background: var(--gray-50);
+            transition: border-color 0.2s;
+            outline: none;
+        }
+        .filter-group select:focus,
+        .filter-group input:focus {
+            border-color: var(--primary);
+            background: white;
+        }
+        .btn-search {
+            padding: 9px 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: opacity 0.2s;
+        }
+        .btn-search:hover { opacity: 0.9; }
+        .btn-reset {
+            padding: 9px 14px;
+            background: var(--gray-100);
+            color: var(--gray-500);
+            border: none;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.88rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s;
+        }
+        .btn-reset:hover { background: var(--gray-200); }
+
+        /* 통계 요약 */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 600px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+        .stat-card {
+            background: white;
+            border-radius: 14px;
+            padding: 16px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .stat-card .stat-num {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            line-height: 1;
+        }
+        .stat-card .stat-label {
+            font-size: 0.78rem;
+            color: var(--gray-400);
+            margin-top: 4px;
+        }
+
+        /* 뷰 전환 */
+        .view-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .view-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+        .view-btns { display: flex; gap: 6px; }
+        .view-btn {
+            padding: 7px 14px;
+            border: 1.5px solid var(--gray-200);
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: var(--gray-500);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .view-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* ── 날짜별 그룹 뷰 ── */
+        .date-group {
+            margin-bottom: 24px;
+        }
+        .date-group-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            background: linear-gradient(90deg, var(--primary-light), transparent);
+            border-left: 4px solid var(--primary);
+            border-radius: 0 10px 10px 0;
+            margin-bottom: 12px;
+        }
+        .date-group-header .date-text {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .date-group-header .date-count {
+            font-size: 0.8rem;
+            color: var(--gray-400);
+        }
+
+        /* ── 거래처별 그룹 뷰 ── */
+        .room-group {
+            background: white;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .room-group-header {
+            padding: 14px 20px;
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .room-group-header .room-name-text {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #0369a1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .room-group-header .room-meta {
+            font-size: 0.8rem;
+            color: var(--gray-400);
+        }
+        .room-group-body { padding: 16px; }
+
+        /* ── 사진 그리드 ── */
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+        }
+        @media (max-width: 480px) {
+            .photo-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        .photo-card {
+            border-radius: 12px;
+            overflow: hidden;
+            background: var(--gray-50);
+            border: 1.5px solid var(--gray-200);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+        .photo-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+        }
+        .photo-thumb {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            display: block;
+        }
+        .photo-thumb-empty {
+            width: 100%;
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray-400);
+            font-size: 0.75rem;
+            background: var(--gray-100);
+        }
+        .photo-thumb-empty i { font-size: 1.8rem; margin-bottom: 4px; }
+        .photo-info {
+            padding: 8px 10px;
+        }
+        .photo-type {
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-bottom: 4px;
+        }
+        .type-loading { background: #fef3c7; color: #d97706; }
+        .type-delivery { background: #dcfce7; color: #16a34a; }
+        .photo-driver {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--gray-700);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .photo-date-small {
+            font-size: 0.7rem;
+            color: var(--gray-400);
+            margin-top: 2px;
+        }
+        .photo-stop-label {
+            font-size: 0.7rem;
+            color: #0891b2;
+            font-weight: 500;
+        }
+
+        /* 라이트박스 */
+        .lightbox-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.92);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            flex-direction: column;
+        }
+        .lightbox-overlay.active { display: flex; }
+        .lightbox-img-wrap {
+            position: relative;
+            max-width: 95vw;
+            max-height: 80vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .lightbox-img-wrap img {
+            max-width: 100%;
+            max-height: 80vh;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .lightbox-caption {
+            color: rgba(255,255,255,0.85);
+            font-size: 0.9rem;
+            margin-top: 14px;
+            text-align: center;
+            max-width: 600px;
+            line-height: 1.5;
+        }
+        .lightbox-close {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            font-size: 1.4rem;
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .lightbox-close:hover { background: rgba(255,255,255,0.25); }
+        .lightbox-nav {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+        }
+        .lightbox-nav-btn {
+            background: rgba(255,255,255,0.15);
+            border: none;
+            color: white;
+            padding: 8px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s;
+        }
+        .lightbox-nav-btn:hover { background: rgba(255,255,255,0.3); }
+        .lightbox-nav-btn:disabled { opacity: 0.3; cursor: default; }
+
+        /* 빈 상태 */
+        .empty-gallery {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 16px;
+            color: var(--gray-400);
+        }
+        .empty-gallery i { font-size: 3.5rem; display: block; margin-bottom: 14px; }
+        .empty-gallery p { font-size: 1rem; }
+        .empty-gallery small { font-size: 0.85rem; margin-top: 6px; display: block; }
+
+        /* 로딩 */
+        .loading-spinner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px;
+            color: var(--gray-400);
+            gap: 12px;
+            font-size: 0.95rem;
+        }
+        .loading-spinner i { font-size: 1.5rem; }
+
+        /* 폼 공통 */
+        .form-group { margin-bottom: 18px; }
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 6px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid var(--gray-200);
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            outline: none;
+        }
+        .form-group input:focus { border-color: var(--primary); }
+        .error-msg { color: var(--danger); font-size: 0.82rem; margin-top: 8px; display: none; }
+        .btn-primary-full {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: opacity 0.2s;
+        }
+        .btn-primary-full:hover { opacity: 0.9; }
+        .btn-primary-full:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* 정보 배지 */
+        .info-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-invoice { background: #eff6ff; color: #2563eb; }
+        .badge-temp { background: #fff7ed; color: #ea580c; }
+
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 99999; }
+    </style>
+</head>
+<body>
+    <!-- 헤더 -->
+    <header class="gallery-header">
+        <div class="header-inner">
+            <div class="logo">
+                <a href="index.html"><i class="fas fa-arrow-left"></i></a>
+                <i class="fas fa-images"></i> 사진 보관함
+            </div>
+            <div class="header-actions">
+                <span class="header-badge" id="galleryTotalBadge">
+                    <i class="fas fa-photo-video"></i> 로딩 중...
+                </span>
+                <button onclick="galleryLogout()" style="background:rgba(255,255,255,0.15);color:white;border:none;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:0.82rem;display:flex;align-items:center;gap:6px;">
+                    <i class="fas fa-sign-out-alt"></i> 로그아웃
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 관리자 로그인 게이트 -->
+    <div class="admin-gate" id="adminGate">
+        <div class="gate-card">
+            <div class="gate-icon">
+                <i class="fas fa-lock"></i>
+            </div>
+            <h2>사진 보관함 접근</h2>
+            <p>관리자 비밀번호를 입력하세요.<br>기사가 업로드한 모든 서류 사진을 날짜·거래처별로 확인할 수 있습니다.</p>
+
+            <div class="form-group" style="text-align:left;">
+                <label><i class="fas fa-key"></i> 관리자 비밀번호</label>
+                <div style="position:relative;">
+                    <input type="password" id="galleryPw" placeholder="비밀번호 입력" autocomplete="off"
+                        onkeydown="if(event.key==='Enter') doGalleryLogin()" />
+                </div>
+            </div>
+            <div id="galleryPwError" class="error-msg"></div>
+            <button class="btn-primary-full" onclick="doGalleryLogin()" id="galleryLoginBtn">
+                <i class="fas fa-sign-in-alt"></i> 입장하기
+            </button>
+        </div>
+    </div>
+
+    <!-- 갤러리 메인 -->
+    <div class="gallery-main" id="galleryMain" style="display:none;">
+
+        <!-- 필터 패널 -->
+        <div class="filter-panel">
+            <h3><i class="fas fa-filter"></i> 검색 / 필터</h3>
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label><i class="fas fa-building"></i> 거래처(룸)</label>
+                    <select id="filterRoom">
+                        <option value="">전체 거래처</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-calendar-alt"></i> 시작 날짜</label>
+                    <input type="date" id="filterDateFrom" />
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-calendar-alt"></i> 종료 날짜</label>
+                    <input type="date" id="filterDateTo" />
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-user"></i> 기사 이름</label>
+                    <input type="text" id="filterDriver" placeholder="기사 이름 검색" />
+                </div>
+            </div>
+            <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+                <div class="filter-group" style="flex:1; min-width:120px;">
+                    <label><i class="fas fa-tag"></i> 서류 유형</label>
+                    <select id="filterDocType">
+                        <option value="">전체 서류</option>
+                        <option value="loading">상차 서류</option>
+                        <option value="delivery">하차 서류</option>
+                        <option value="invoice">거래명세표만</option>
+                        <option value="temp">온도기록지만</option>
+                    </select>
+                </div>
+                <div style="display:flex; align-items:flex-end; gap:8px;">
+                    <button class="btn-search" onclick="applyFilter()">
+                        <i class="fas fa-search"></i> 검색
+                    </button>
+                    <button class="btn-reset" onclick="resetFilter()">
+                        <i class="fas fa-undo"></i> 초기화
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 통계 -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-num" id="statTotalPhotos">0</div>
+                <div class="stat-label">전체 사진</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-num" id="statLoadingPhotos" style="color:#d97706;">0</div>
+                <div class="stat-label">상차 서류</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-num" id="statDeliveryPhotos" style="color:#16a34a;">0</div>
+                <div class="stat-label">하차 서류</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-num" id="statTotalDeliveries" style="color:#7c3aed;">0</div>
+                <div class="stat-label">배송 건수</div>
+            </div>
+        </div>
+
+        <!-- 뷰 전환 -->
+        <div class="view-controls">
+            <div class="view-title" id="galleryResultTitle">검색 결과</div>
+            <div class="view-btns">
+                <button class="view-btn active" id="btnViewDate" onclick="setView('date')">
+                    <i class="fas fa-calendar-week"></i> 날짜별
+                </button>
+                <button class="view-btn" id="btnViewRoom" onclick="setView('room')">
+                    <i class="fas fa-building"></i> 거래처별
+                </button>
+                <button class="view-btn" id="btnViewGrid" onclick="setView('grid')">
+                    <i class="fas fa-th"></i> 전체 그리드
+                </button>
+            </div>
+        </div>
+
+        <!-- 결과 영역 -->
+        <div id="galleryResults">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i> 데이터를 불러오는 중...
+            </div>
+        </div>
+    </div>
+
+    <!-- 라이트박스 -->
+    <div class="lightbox-overlay" id="lightboxOverlay" onclick="closeLightbox(event)">
+        <div class="lightbox-img-wrap" onclick="event.stopPropagation()">
+            <button class="lightbox-close" onclick="closeLightbox()">
+                <i class="fas fa-times"></i>
+            </button>
+            <img id="lightboxImg" src="" alt="사진 확대" />
+        </div>
+        <div class="lightbox-caption" id="lightboxCaption"></div>
+        <div class="lightbox-nav">
+            <button class="lightbox-nav-btn" id="lbPrev" onclick="navigateLightbox(-1)">
+                <i class="fas fa-chevron-left"></i> 이전
+            </button>
+            <span id="lbCounter" style="color:rgba(255,255,255,0.6);font-size:0.85rem;align-self:center;"></span>
+            <button class="lightbox-nav-btn" id="lbNext" onclick="navigateLightbox(1)">
+                다음 <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="js/utils.js?v=20250320I"></script>
+    <script src="js/gallery.js?v=20250320I"></script>
+</body>
+</html>

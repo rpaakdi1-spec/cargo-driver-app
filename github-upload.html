@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub 파일 업로드 가이드</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --surface2: #263045;
+            --border: rgba(255,255,255,0.08);
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --green: #10b981;
+            --yellow: #f59e0b;
+            --red: #ef4444;
+            --text: #e2e8f0;
+            --text-dim: #94a3b8;
+            --code-bg: #0d1117;
+            --radius: 12px;
+        }
+        body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; }
+
+        /* 헤더 */
+        .header { background: linear-gradient(135deg,#1e1b4b,#312e81,#1e3a8a); padding:0; position:sticky; top:0; z-index:100; box-shadow:0 2px 20px rgba(0,0,0,.4); }
+        .header-inner { max-width:900px; margin:0 auto; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; }
+        .header-logo { display:flex; align-items:center; gap:10px; font-size:1.05rem; font-weight:700; }
+        .header-logo i { color:#818cf8; }
+        .header-back { color:rgba(255,255,255,.75); text-decoration:none; padding:6px 14px; border:1px solid rgba(255,255,255,.2); border-radius:8px; font-size:.85rem; display:flex; align-items:center; gap:6px; }
+        .header-back:hover { background:rgba(255,255,255,.1); }
+
+        /* 히어로 */
+        .hero { background:linear-gradient(135deg,#1e1b4b,#312e81,#1e3a8a); padding:40px 20px 32px; text-align:center; }
+        .hero h1 { font-size:1.7rem; font-weight:800; margin-bottom:8px; }
+        .hero h1 span { color:#818cf8; }
+        .hero p { color:rgba(255,255,255,.7); font-size:.92rem; }
+
+        /* 본문 */
+        .wrap { max-width:900px; margin:0 auto; padding:32px 20px 80px; }
+
+        /* 파일 스텝 카드 */
+        .file-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:20px; overflow:hidden; }
+        .file-card-head { padding:16px 20px; display:flex; align-items:center; gap:14px; border-bottom:1px solid var(--border); }
+        .file-num { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.85rem; font-weight:800; flex-shrink:0; }
+        .file-card-head h2 { font-size:1rem; font-weight:700; margin-bottom:2px; }
+        .file-card-head p { font-size:.8rem; color:var(--text-dim); font-family:monospace; }
+        .file-card-body { padding:16px 20px; }
+
+        /* 경로 안내 */
+        .path-box { background:rgba(99,102,241,.1); border:1px solid rgba(99,102,241,.25); border-radius:8px; padding:10px 14px; font-size:.82rem; margin-bottom:12px; display:flex; align-items:flex-start; gap:8px; }
+        .path-box i { color:var(--primary-light); flex-shrink:0; margin-top:3px; }
+        .path-box code { color:#c7d2fe; font-family:monospace; word-break:break-all; }
+
+        /* 코드 블록 */
+        .code-wrap { position:relative; background:var(--code-bg); border:1px solid rgba(255,255,255,.1); border-radius:10px; margin:10px 0; overflow:hidden; }
+        .code-header { background:rgba(255,255,255,.05); padding:8px 14px; font-size:.75rem; color:var(--text-dim); border-bottom:1px solid rgba(255,255,255,.06); display:flex; align-items:center; justify-content:space-between; }
+        .code-header span { display:flex; align-items:center; gap:6px; }
+        .code-header i { color:var(--primary-light); }
+        .copy-btn { background:rgba(99,102,241,.2); color:#a5b4fc; border:1px solid rgba(99,102,241,.3); border-radius:6px; padding:3px 10px; font-size:.75rem; cursor:pointer; font-family:inherit; transition:all .2s; white-space:nowrap; }
+        .copy-btn:hover { background:rgba(99,102,241,.4); color:#fff; }
+        .copy-btn.copied { background:rgba(16,185,129,.2); color:#6ee7b7; border-color:rgba(16,185,129,.3); }
+        pre { padding:14px 16px; font-family:'Courier New',monospace; font-size:.8rem; line-height:1.7; white-space:pre; overflow-x:auto; color:#e2e8f0; }
+        pre::-webkit-scrollbar { height:4px; }
+        pre::-webkit-scrollbar-thumb { background:rgba(255,255,255,.15); border-radius:2px; }
+
+        /* 알림 */
+        .alert { border-radius:10px; padding:12px 16px; font-size:.84rem; display:flex; gap:10px; align-items:flex-start; margin:12px 0; line-height:1.6; }
+        .alert i { flex-shrink:0; margin-top:2px; }
+        .alert-warn  { background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.25); color:#fcd34d; }
+        .alert-info  { background:rgba(99,102,241,.1); border:1px solid rgba(99,102,241,.25); color:#a5b4fc; }
+        .alert-success { background:rgba(16,185,129,.1); border:1px solid rgba(16,185,129,.25); color:#6ee7b7; }
+        .alert-danger  { background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.25); color:#fca5a5; }
+
+        /* 섹션 타이틀 */
+        .sec-title { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--text-dim); margin:28px 0 14px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+
+        /* 링크 버튼 */
+        .link-btn { display:inline-flex; align-items:center; gap:7px; padding:9px 16px; border-radius:8px; text-decoration:none; font-size:.84rem; font-weight:700; transition:all .2s; }
+        .link-btn-primary { background:var(--primary); color:#fff; }
+        .link-btn-primary:hover { background:#4f46e5; }
+        .link-btn-outline { background:rgba(255,255,255,.06); color:var(--text); border:1px solid var(--border); }
+        .link-btn-outline:hover { background:rgba(255,255,255,.1); }
+
+        /* 스텝 */
+        .steps { list-style:none; display:flex; flex-direction:column; gap:12px; margin:12px 0; }
+        .step { display:flex; gap:12px; align-items:flex-start; }
+        .step-n { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.78rem; font-weight:700; flex-shrink:0; margin-top:1px; }
+        .step-body-t { font-weight:700; font-size:.9rem; margin-bottom:2px; }
+        .step-body-d { font-size:.82rem; color:var(--text-dim); line-height:1.6; }
+        .step-body-d strong { color:var(--text); }
+
+        /* 배지 */
+        .badge { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:20px; font-size:.72rem; font-weight:700; vertical-align:middle; }
+        .badge-green { background:rgba(16,185,129,.2); color:#6ee7b7; }
+        .badge-purple { background:rgba(99,102,241,.2); color:#a5b4fc; }
+        .badge-red { background:rgba(239,68,68,.2); color:#fca5a5; }
+        .badge-yellow { background:rgba(245,158,11,.2); color:#fcd34d; }
+
+        /* 파일 순서 색상 */
+        .n-blue   { background:rgba(99,102,241,.25); color:#a5b4fc; }
+        .n-green  { background:rgba(16,185,129,.25); color:#6ee7b7; }
+        .n-yellow { background:rgba(245,158,11,.25); color:#fcd34d; }
+        .n-red    { background:rgba(239,68,68,.25);  color:#fca5a5; }
+        .n-cyan   { background:rgba(8,145,178,.25);  color:#67e8f9; }
+
+        /* 진행 표시 */
+        .progress-bar { display:flex; gap:6px; margin-bottom:24px; flex-wrap:wrap; }
+        .prog-item { flex:1; min-width:80px; background:var(--surface2); border-radius:8px; padding:8px 10px; text-align:center; border:1px solid var(--border); font-size:.72rem; color:var(--text-dim); cursor:pointer; transition:all .2s; }
+        .prog-item:hover { border-color:var(--primary); color:var(--primary-light); }
+        .prog-item .pi-num { font-size:1rem; font-weight:800; display:block; margin-bottom:2px; }
+
+        @media(max-width:600px) {
+            .hero h1 { font-size:1.3rem; }
+            pre { font-size:.72rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    <div class="header-inner">
+        <div class="header-logo"><i class="fab fa-github"></i> GitHub 파일 업로드 가이드</div>
+        <a href="deploy-guide.html" class="header-back"><i class="fas fa-arrow-left"></i> 배포 가이드</a>
+    </div>
+</header>
+
+<div class="hero">
+    <h1>🐙 GitHub에서 <span>복사·붙여넣기</span>로<br>파일 만드는 방법</h1>
+    <p>Android Studio 없이 브라우저만으로 — 파일 9개를 순서대로 만들면 APK 자동 빌드 시작!</p>
+</div>
+
+<div class="wrap">
+
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i>
+        <div>
+            <strong>저장소 주소:</strong> <code style="color:#c7d2fe;">github.com/rpaakdi1-spec/cargo-driver-app</code><br>
+            <span style="font-size:.82rem;">아래 파일들을 순서대로 만들면 됩니다. 각 파일마다 링크를 클릭하면 GitHub 편집창이 바로 열립니다.</span>
+        </div>
+    </div>
+
+    <!-- 진행 표시 -->
+    <div class="progress-bar">
+        <div class="prog-item" onclick="scrollToFile(1)"><span class="pi-num">1</span>build.gradle</div>
+        <div class="prog-item" onclick="scrollToFile(2)"><span class="pi-num">2</span>settings.gradle</div>
+        <div class="prog-item" onclick="scrollToFile(3)"><span class="pi-num">3</span>gradle.properties</div>
+        <div class="prog-item" onclick="scrollToFile(4)"><span class="pi-num">4</span>wrapper</div>
+        <div class="prog-item" onclick="scrollToFile(5)"><span class="pi-num">5</span>build.yml</div>
+        <div class="prog-item" onclick="scrollToFile(6)"><span class="pi-num">6</span>app/build.gradle</div>
+        <div class="prog-item" onclick="scrollToFile(7)"><span class="pi-num">7</span>Manifest</div>
+        <div class="prog-item" onclick="scrollToFile(8)"><span class="pi-num">8</span>Java 파일들</div>
+        <div class="prog-item" onclick="scrollToFile(9)"><span class="pi-num">9</span>res 파일들</div>
+    </div>
+
+    <!-- 공통 사용법 -->
+    <p class="sec-title"><i class="fas fa-question-circle"></i> 공통 사용법 — 파일 만드는 방법</p>
+    <div class="file-card">
+        <div class="file-card-body">
+            <ul class="steps">
+                <li class="step">
+                    <div class="step-n" style="background:rgba(99,102,241,.2);color:#a5b4fc;">1</div>
+                    <div><div class="step-body-t">아래 각 파일의 <span class="badge badge-purple"><i class="fas fa-external-link-alt"></i> GitHub에서 만들기</span> 버튼 클릭</div><div class="step-body-d">클릭하면 GitHub 새 파일 편집창이 열립니다. 파일 이름은 자동 입력됩니다.</div></div>
+                </li>
+                <li class="step">
+                    <div class="step-n" style="background:rgba(99,102,241,.2);color:#a5b4fc;">2</div>
+                    <div><div class="step-body-t">아래 코드박스의 <span class="badge badge-green"><i class="fas fa-copy"></i> 전체 복사</span> 버튼 클릭</div><div class="step-body-d">코드 전체가 클립보드에 복사됩니다.</div></div>
+                </li>
+                <li class="step">
+                    <div class="step-n" style="background:rgba(99,102,241,.2);color:#a5b4fc;">3</div>
+                    <div><div class="step-body-t">GitHub 편집창 본문에 <code>Ctrl+A</code> 후 <code>Ctrl+V</code> 로 붙여넣기</div><div class="step-body-d">편집창 클릭 → 전체선택(Ctrl+A) → 붙여넣기(Ctrl+V)</div></div>
+                </li>
+                <li class="step">
+                    <div class="step-n n-green">4</div>
+                    <div><div class="step-body-t">우상단 초록 <strong>"Commit changes"</strong> 클릭 → 확정</div><div class="step-body-d">팝업에서 메시지 그대로 두고 <strong>"Commit changes"</strong> 버튼 클릭</div></div>
+                </li>
+            </ul>
+            <div class="alert alert-warn" style="margin-top:4px;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span><strong>파일 이름에 슬래시(/)를 입력하면 폴더가 자동 생성됩니다!</strong><br>예: <code>android/app/build.gradle</code> 입력 → android 폴더 안에 app 폴더 안에 파일 생성</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════
+         파일 1: android/build.gradle
+    ═══════════════════════════════════ -->
+    <p class="sec-title" id="file-1"><i class="fas fa-file-code"></i> 파일 1 — 루트 빌드 설정</p>
+    <div class="file-card">
+        <div class="file-card-head">
+            <div class="file-num n-blue">1</div>
+            <div>
+                <h2>android/build.gradle</h2>
+                <p>프로젝트 루트 Gradle 빌드 설정</p>
+            </div>
+            <a href="https://github.com/rpaakdi1-spec/cargo-driver-app/new/main?filename=android/build.gradle" target="_blank" class="link-btn link-btn-primary" style="margin-left:auto;font-size:.78rem;">
+                <i class="fab fa-github"></i> GitHub에서 만들기
+            </a>
+        </div>
+        <div class="file-card-body">
+            <div class="path-box"><i class="fas fa-folder-open"></i><div>GitHub 편집창 파일명: <code>android/build.gradle</code></div></div>
+            <div class="code-wrap">
+                <div class="code-header">
+                    <span><i class="fas fa-file-code"></i> android/build.gradle</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'code1')"><i class="fas fa-copy"></i> 전체 복사</button>
+                </div>
+                <pre id="code1">// 프로젝트 루트 build.gradle
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.2.2'
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════
+         파일 2: android/settings.gradle
+    ═══════════════════════════════════ -->
+    <p class="sec-title" id="file-2"><i class="fas fa-file-code"></i> 파일 2 — 프로젝트 설정</p>
+    <div class="file-card">
+        <div class="file-card-head">
+            <div class="file-num n-blue">2</div>
+            <div>
+                <h2>android/settings.gradle</h2>
+                <p>프로젝트 이름 및 모듈 포함 설정</p>
+            </div>
+            <a href="https://github.com/rpaakdi1-spec/cargo-driver-app/new/main?filename=android/settings.gradle" target="_blank" class="link-btn link-btn-primary" style="margin-left:auto;font-size:.78rem;">
+                <i class="fab fa-github"></i> GitHub에서 만들기
+            </a>
+        </div>
+        <div class="file-card-body">
+            <div class="path-box"><i class="fas fa-folder-open"></i><div>GitHub 편집창 파일명: <code>android/settings.gradle</code></div></div>
+            <div class="code-wrap">
+                <div class="code-header">
+                    <span><i class="fas fa-file-code"></i> android/settings.gradle</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'code2')"><i class="fas fa-copy"></i> 전체 복사</button>
+                </div>
+                <pre id="code2">pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+rootProject.name = "CargoDriver"
+include ':app'</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════
+         파일 3: gradle.properties
+    ═══════════════════════════════════ -->
+    <p class="sec-title" id="file-3"><i class="fas fa-file-code"></i> 파일 3 — Gradle 속성</p>
+    <div class="file-card">
+        <div class="file-card-head">
+            <div class="file-num n-blue">3</div>
+            <div>
+                <h2>android/gradle.properties</h2>
+                <p>JVM 메모리, AndroidX 설정</p>
+            </div>
+            <a href="https://github.com/rpaakdi1-spec/cargo-driver-app/new/main?filename=android/gradle.properties" target="_blank" class="link-btn link-btn-primary" style="margin-left:auto;font-size:.78rem;">
+                <i class="fab fa-github"></i> GitHub에서 만들기
+            </a>
+        </div>
+        <div class="file-card-body">
+            <div class="path-box"><i class="fas fa-folder-open"></i><div>GitHub 편집창 파일명: <code>android/gradle.properties</code></div></div>
+            <div class="code-wrap">
+                <div class="code-header">
+                    <span><i class="fas fa-file-code"></i> android/gradle.properties</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'code3')"><i class="fas fa-copy"></i> 전체 복사</button>
+                </div>
+                <pre id="code3">org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+android.useAndroidX=true
+android.enableJetifier=true</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════
+         파일 4: gradle-wrapper.properties
+    ═══════════════════════════════════ -->
+    <p class="sec-title" id="file-4"><i class="fas fa-file-code"></i> 파일 4 — Gradle 버전 지정</p>
+    <div class="file-card">
+        <div class="file-card-head">
+            <div class="file-num n-blue">4</div>
+            <div>
+                <h2>android/gradle/wrapper/gradle-wrapper.properties</h2>
+                <p>사용할 Gradle 버전 지정 (8.4)</p>
+            </div>
+            <a href="https://github.com/rpaakdi1-spec/cargo-driver-app/new/main?filename=android/gradle/wrapper/gradle-wrapper.properties" target="_blank" class="link-btn link-btn-primary" style="margin-left:auto;font-size:.78rem;">
+                <i class="fab fa-github"></i> GitHub에서 만들기
+            </a>
+        </div>
+        <div class="file-card-body">
+            <div class="path-box"><i class="fas fa-folder-open"></i><div>GitHub 편집창 파일명: <code>android/gradle/wrapper/gradle-wrapper.properties</code></div></div>
+            <div class="code-wrap">
+                <div class="code-header">
+                    <span><i class="fas fa-file-code"></i> gradle-wrapper.properties</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'code4')"><i class="fas fa-copy"></i> 전체 복사</button>
+                </div>
+                <pre id="code4">distributionBase=GRADLE_USER_HOME
+distributionPath=wrapper/dists
+distributionUrl=https\://services.gradle.org/distributions/gradle-8.4-bin.zip
+zipStoreBase=GRADLE_USER_HOME
+zipStorePath=wrapper/dists</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════
+         파일 5: build.yml ★ 핵심
+    ═══════════════════════════════════ -->
+    <p class="sec-title" id="file-5"><i class="fas fa-robot"></i> 파일 5 — GitHub Actions 빌드 설정 ★ 핵심</p>
+    <div class="file-card" style="border-color:rgba(16,185,129,.3);">
+        <div class="file-card-head" style="border-bottom-color:rgba(16,185,129,.15);">
+            <div class="file-num n-green">5</div>
+            <div>
+                <h2>android/.github/workflows/build.yml</h2>
+                <p>이 파일이 있어야 APK가 자동으로 빌드됩니다!</p>
+            </div>
+            <a href="https://github.com/rpaakdi1-spec/cargo-driver-app/new/main?filename=android/.github/workflows/build.yml" target="_blank" class="link-btn link-btn-primary" style="margin-left:auto;font-size:.78rem;">
+                <i class="fab fa-github"></i> GitHub에서 만들기
+            </a>
+        </div>
+        <div class="file-card-body">
+            <div class="alert alert-success">
+                <i class="fas fa-magic"></i>
+                <span>이 파일을 만들면 코드가 push될 때마다 <strong>APK가 자동 빌드되고 Release에 업로드</strong>됩니다!</span>
+            </div>
+            <div class="path-box"><i class="fas fa-folder-open"></i><div>GitHub 편집창 파일명: <code>android/.github/workflows/build.yml</code><br><small style="color:var(--text-dim);">※ .github 앞에 점(.)이 있습니다. 그대로 입력하세요.</small></div></div>
+            <div class="code-wrap">
+                <div class="code-header">
+                    <span><i class="fas fa-robot"></i> .github/workflows/build.yml</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'code5')"><i class="fas fa-copy"></i> 전체 복사</button>
+                </div>
+                <pre id="code5">name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: JDK 17 설정
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Gradle 설치
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.4'
+
+      - name: APK 빌드
+        run: |
+          cd android
+          gradle assembleDebug --no-daemon
+
+      - name: 버전 날짜 태그 생성
+        id: tag
+        run: echo "TAG=apk-$(date +'%Y%m%d-%H%M')" >> $GITHUB_OUTPUT
+
+      - name: APK 이름 변경 (날짜 포함)
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk \
+             android/app/build/outputs/apk/debug/화물운송기사앱-${{ steps.tag.outputs.TAG }}.apk
+
+      - name: GitHub Release 생성 및 APK 업로드
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.TAG }}
+          name: "🚛 화물운송 기사앱 ${{ steps.tag.outputs.TAG }}"
+          body: |
+            ## 📦 화물운송 기사 Android APK
+            ### 설치 방법
+            1. 아래 APK 파일 클릭하여 다운로드
+            2. 폰에서 파일 열기 → 알 수 없는 출처 허용 → 설치
+            3. 위치 권한 "항상 허용" 설정
+          files: |
+            android/app/build/outputs/apk/debug/화물운송기사앱-${{ steps.tag.outputs.TAG }}.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Artifacts 백업 (30일)
+        uses: actions/upload-artifact@v4
+        with:
+          name: 화물운송기사앱-${{ steps.tag.outputs.TAG }}
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════
+         파일 6: app/build.gradle
+    ═══════════════════════════════════ -->
+    <p class="sec-title" id="file-6"><i class="fas fa-file-code"></i> 파일 6 — 앱 빌드 설정</p>
+    <div class="file-card">
+        <div class="file-card-head">
+            <div class="file-num n-blue">6</div>
+            <div>
+                <h2>android/app/build.gradle</h2>
+                <p>앱 버전, SDK, 라이브러리 의존성</p>
+            </div>
+            <a href="https://github.com/rpaakdi1-spec/cargo-driver-app/new/main?filename=android/app/build.gradle" target="_blank" class="link-btn link-btn-primary" style="margin-left:auto;font-size:.78rem;">
+                <i class="fab fa-github"></i> GitHub에서 만들기
+            </a>
+        </div>
+        <div class="file-card-body">
+            <div class="alert alert-warn">
+                <i class="fas fa-code-branch"></i>
+                <span>업데이트할 때마다 <strong>versionCode</strong> 숫자를 1씩 올려야 기사님 폰에서 업그레이드 설치가 됩니다!</span>
+            </div>
+            <div class="path-box"><i class="fas fa-folder-open"></i><div>GitHub 편집창 파일명: <code>android/app/build.gradle</code></div></div>
+            <div class="code-wrap">
+                <div class="code-header">
+                    <span><i class="fas fa-file-code"></i> android/app/build.gradle</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'code6')"><i class="fas fa-copy"></i> 전체 복사</button>
+                </div>
+                <pre id="code6">// app/build.gradle
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.cargo.driver'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.cargo.driver"
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
+    implementation 'com.google.android.gms:play-services-location:21.2.0'
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+}</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════
+         파일 7: AndroidManifest.xml
+    ═══════════════════════════════════ -->
+    <p class="sec-title" id="file-7"><i class="fas fa-shield-alt"></i> 파일 7 — 권한 선언</p>
+    <div class="file-card">
+        <div class="file-card-head">
+            <div class="file-num n-yellow">7</div>
+            <div>
+                <h2>android/app/src/main/AndroidManifest.xml</h2>
+                <p>GPS, 인터넷, 백그라운드 위치 등 권한 선언</p>
+            </div>
+            <a href="https://github.com/rpaakdi1-spec/cargo-driver-app/new/main?filename=android/app/src/main/AndroidManifest.xml" target="_blank" class="link-btn link-btn-primary" style="margin-left:auto;font-size:.78rem;">
+                <i class="fab fa-github"></i> GitHub에서 만들기
+            </a>
+        </div>
+        <div class="file-card-body">
+            <div class="path-box"><i class="fas fa-folder-open"></i><div>GitHub 편집창 파일명: <code>android/app/src/main/AndroidManifest.xml</code></div></div>
+            <div class="code-wrap">
+                <div class="code-header">
+                    <span><i class="fas fa-file-code"></i> AndroidManifest.xml</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'code7')"><i class="fas fa-copy"></i> 전체 복사</button>
+                </div>
+                <pre id="code7">&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;manifest xmlns:android="http://schemas.android.com/apk/res/android"&gt;
+
+    &lt;!-- 인터넷 --&gt;
+    &lt;uses-permission android:name="android.permission.INTERNET" /&gt;
+
+    &lt;!-- GPS 권한 --&gt;
+    &lt;uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /&gt;
+    &lt;uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /&gt;
+
+    &lt;!-- 백그라운드 GPS (Android 10+) --&gt;
+    &lt;uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" /&gt;
+
+    &lt;!-- Foreground Service --&gt;
+    &lt;uses-permission android:name="android.permission.FOREGROUND_SERVICE" /&gt;
+    &lt;uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" /&gt;
+
+    &lt;!-- 화면 켜짐 유지 --&gt;
+    &lt;uses-permission android:name="android.permission.WAKE_LOCK" /&gt;
+
+    &lt;!-- 부팅 후 자동 시작 --&gt;
+    &lt;uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" /&gt;
+
+    &lt;application
+        android:allowBackup="false"
+        android:icon="@drawable/ic_gps"
+        android:label="@string/app_name"
+        android:supportsRtl="false"
+        android:theme="@style/Theme.CargoDriver"
+        android:usesCleartextTraffic="true"&gt;
+
+        &lt;activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:windowSoftInputMode="adjustResize"&gt;
+            &lt;intent-filter&gt;
+                &lt;action android:name="android.intent.action.MAIN" /&gt;
+                &lt;category android:name="android.intent.category.LAUNCHER" /&gt;
+            &lt;/intent-filter&gt;
+        &lt;/activity&gt;
+
+        &lt;service
+            android:name=".GpsService"
+            android:exported="false"
+            android:foregroundServiceType="location" /&gt;
+
+    &lt;/application&gt;
+
+&lt;/manifest&gt;</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════
+         파일 8: Java 파일 3개
+    ═══════════════════════════════════ -->
+    <p class="sec-title" id="file-8"><i class="fab fa-java"></i> 파일 8 — Java 소스 파일 3개</p>
+
+    <!-- 8-1: MainActivity -->
+    <div class="file-card" style="margin-bottom:12px;">
+        <div class="file-card-head">
+            <div class="file-num n-yellow">8-1</div>
+            <div>
+                <h2>MainActivity.java</h2>
+                <p>android/app/src/main/java/com/cargo/driver/MainActivity.java</p>
+            </div>
+            <a href="https://github.com/rpaakdi1-spec/cargo-driver-app/new/main?filename=android/app/src/main/java/com/cargo/driver/MainActivity.java" target="_blank" class="link-btn link-btn-primary" style="margin-left:auto;font-size:.78rem;">
+                <i class="fab fa-github"></i> GitHub에서 만들기
+            </a>
+        </div>
+        <div class="file-card-body">
+            <div class="alert alert-info">
+                <i class="fas fa-link"></i>
+                <span>44~45번 줄의 URL이 현재 Genspark 배포 주소로 이미 설정되어 있습니다. 재배포 후 URL이 바뀌면 이 부분만 수정하세요.</span>
+            </div>
+            <div class="code-wrap">
+                <div class="code-header">
+                    <span><i class="fab fa-java"></i> MainActivity.java</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'code8a')"><i class="fas fa-copy"></i> 전체 복사</button>
+                </div>
+                <pre id="code8a">package com.cargo.driver;
+
+import android.Manifest;
+import android.app.AlertDialog;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.IBinder;
+import android.provider.Settings;
+import android.webkit.CookieManager;
+import android.webkit.GeolocationPermissions;
+import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+public class MainActivity extends AppCompatActivity {
+
+    // ★ 배포된 기사 페이지 URL
+    public static final String DRIVER_URL  = "https://0a89cb78-a46a-4ebb-a43c-ddadb273ca86.vip.gensparksite.com/driver.html";
+    public static final String SERVER_BASE = "https://0a89cb78-a46a-4ebb-a43c-ddadb273ca86.vip.gensparksite.com";
+
+    private WebView            webView;
+    private SwipeRefreshLayout swipeRefresh;
+
+    private GpsService  gpsService;
+    private boolean     serviceBound = false;
+    private final ServiceConnection serviceConn = new ServiceConnection() {
+        @Override public void onServiceConnected(ComponentName name, IBinder binder) {
+            gpsService   = ((GpsService.LocalBinder) binder).getService();
+            serviceBound = true;
+        }
+        @Override public void onServiceDisconnected(ComponentName name) {
+            serviceBound = false;
+        }
+    };
+
+    private ActivityResultLauncher&lt;String[]&gt; permLauncher;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        webView      = findViewById(R.id.webView);
+        swipeRefresh = findViewById(R.id.swipeRefresh);
+        setupWebView();
+        setupPermissionLauncher();
+        requestAllPermissions();
+        webView.loadUrl(DRIVER_URL);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Intent intent = new Intent(this, GpsService.class);
+        bindService(intent, serviceConn, Context.BIND_AUTO_CREATE);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (serviceBound) { unbindService(serviceConn); serviceBound = false; }
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (webView.canGoBack()) webView.goBack();
+        else super.onBackPressed();
+    }
+
+    private void setupWebView() {
+        WebSettings s = webView.getSettings();
+        s.setJavaScriptEnabled(true);
+        s.setDomStorageEnabled(true);
+        s.setDatabaseEnabled(true);
+        s.setGeolocationEnabled(true);
+        s.setAllowFileAccess(false);
+        s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        s.setUserAgentString(s.getUserAgentString() + " CargoDriverApp/1.0");
+        s.setCacheMode(WebSettings.LOAD_DEFAULT);
+        CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
+        webView.addJavascriptInterface(new WebAppInterface(this, this), "AndroidGPS");
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest req) {
+                String url = req.getUrl().toString();
+                if (url.startsWith("http") &amp;&amp; !url.contains("gensparksite.com")) {
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                    return true;
+                }
+                return false;
+            }
+        });
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
+                callback.invoke(origin, true, false);
+            }
+        });
+        swipeRefresh.setOnRefreshListener(() -> {
+            webView.reload();
+            swipeRefresh.setRefreshing(false);
+        });
+        swipeRefresh.setColorSchemeResources(R.color.purple_500);
+    }
+
+    private void setupPermissionLauncher() {
+        permLauncher = registerForActivityResult(
+            new ActivityResultContracts.RequestMultiplePermissions(),
+            results -> {
+                boolean fineGranted = Boolean.TRUE.equals(results.get(Manifest.permission.ACCESS_FINE_LOCATION));
+                if (!fineGranted) { showPermissionDialog(); return; }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) requestBackgroundPermission();
+            });
+    }
+
+    private void requestAllPermissions() {
+        List&lt;String&gt; needed = new ArrayList&lt;&gt;();
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            needed.add(Manifest.permission.ACCESS_FINE_LOCATION);
+            needed.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+        }
+        if (!needed.isEmpty()) permLauncher.launch(needed.toArray(new String[0]));
+        else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) requestBackgroundPermission();
+    }
+
+    private void requestBackgroundPermission() {
+        if (Build.VERSION.SDK_INT &lt; Build.VERSION_CODES.Q) return;
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED) return;
+        new AlertDialog.Builder(this)
+            .setTitle("백그라운드 위치 권한 필요")
+            .setMessage("네비 사용 중에도 GPS를 전송하려면\n위치 권한을 '항상 허용'으로 설정해 주세요.\n\n설정 → 앱 → 화물운송 기사 → 권한 → 위치 → 항상 허용")
+            .setPositiveButton("설정 열기", (d, w) -> startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName()))))
+            .setNegativeButton("나중에", null).show();
+    }
+
+    private void showPermissionDialog() {
+        new AlertDialog.Builder(this)
+            .setTitle("GPS 권한 필요")
+            .setMessage("이 앱은 배송 중 기사 위치를 전송하기 위해 GPS 권한이 필요합니다.")
+            .setPositiveButton("설정 열기", (d, w) -> startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + getPackageName()))))
+            .setNegativeButton("종료", (d, w) -> finish()).show();
+    }
+
+    public void startGpsService(String deliveryId) {
+        Intent intent = new Intent(this, GpsService.class);
+        intent.putExtra("serverBaseUrl", SERVER_BASE);
+        intent.putExtra("deliveryId",    deliveryId);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(intent);
+        else startService(intent);
+        if (serviceBound &amp;&amp; gpsService != null) {
+            gpsService.setDeliveryId(deliveryId);
+            gpsService.setServerBaseUrl(SERVER_BASE);
+        }
+    }
+
+    public void stopGpsService() { stopService(new Intent(this, GpsService.class)); }
+
+    public boolean isGpsServiceRunning() { return serviceBound &amp;&amp; gpsService != null &amp;&amp; gpsService.isRunning(); }
+
+    public void runJs(String js) { runOnUiThread(() -> webView.evaluateJavascript(js, null)); }
+}</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- 8-2: GpsService -->
+    <div class="file-card" style="margin-bottom:12px; border-color:rgba(16,185,129,.2);">
+        <div class="file-card-head">
+            <div class="file-num n-green">8-2</div>
+            <div>
+                <h2>GpsService.java ★ 가장 중요</h2>
+                <p>android/app/src/main/java/com/cargo/driver/GpsService.java</p>
+            </div>
+            <a href="https://github.com/rpaakdi1-spec/cargo-driver-app/new/main?filename=android/app/src/main/java/com/cargo/driver/GpsService.java" target="_blank" class="link-btn link-btn-primary" style="margin-left:auto;font-size:.78rem;">
+                <i class="fab fa-github"></i> GitHub에서 만들기
+            </a>
+        </div>
+        <div class="file-card-body">
+            <div class="alert alert-success">
+                <i class="fas fa-satellite-dish"></i>
+                <span><strong>49번 줄</strong>: GPS 수신 주기 (현재 20초) | <strong>50번 줄</strong>: 서버 전송 주기 (현재 30초)<br><strong>276번 줄</strong>: 상태바 알림 문구 "🚛 화물운송 — GPS 전송 중"</span>
+            </div>
+            <div class="code-wrap">
+                <div class="code-header">
+                    <span><i class="fas fa-satellite-dish"></i> GpsService.java</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'code8b')"><i class="fas fa-copy"></i> 전체 복사</button>
+                </div>
+                <pre id="code8b">package com.cargo.driver;
+
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.app.Service;
+import android.content.Intent;
+import android.location.Location;
+import android.os.Binder;
+import android.os.IBinder;
+import android.os.Looper;
+import android.util.Log;
+
+import androidx.annotation.Nullable;
+import androidx.core.app.NotificationCompat;
+
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
+
+import org.json.JSONObject;
+
+import java.io.IOException;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+
+public class GpsService extends Service {
+
+    private static final String TAG            = "GpsService";
+    private static final String CHANNEL_ID     = "gps_channel";
+    private static final int    NOTIF_ID       = 1001;
+    private static final long   UPDATE_INTERVAL = 20_000L;  // ★ GPS 수신 주기 (밀리초)
+    private static final long   SERVER_INTERVAL = 30_000L;  // ★ 서버 전송 주기 (밀리초)
+
+    private String serverBaseUrl = "";
+    private String deliveryId    = "";
+
+    private FusedLocationProviderClient fusedClient;
+    private LocationCallback            locationCallback;
+    private OkHttpClient                httpClient;
+
+    private double lastLat = 0, lastLng = 0;
+    private long   lastServerSend = 0;
+    private boolean running = false;
+
+    private final IBinder binder = new LocalBinder();
+    public class LocalBinder extends Binder {
+        public GpsService getService() { return GpsService.this; }
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        fusedClient = LocationServices.getFusedLocationProviderClient(this);
+        httpClient  = new OkHttpClient();
+        createNotificationChannel();
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        if (intent != null) {
+            serverBaseUrl = intent.getStringExtra("serverBaseUrl") != null ? intent.getStringExtra("serverBaseUrl") : serverBaseUrl;
+            deliveryId    = intent.getStringExtra("deliveryId")    != null ? intent.getStringExtra("deliveryId")    : deliveryId;
+        }
+        startForeground(NOTIF_ID, buildNotification("GPS 연결 중..."));
+        startLocationUpdates();
+        running = true;
+        return START_STICKY;
+    }
+
+    @Override
+    public void onDestroy() {
+        stopLocationUpdates();
+        running = false;
+        super.onDestroy();
+    }
+
+    @Nullable
+    @Override
+    public IBinder onBind(Intent intent) { return binder; }
+
+    public void setDeliveryId(String id) { this.deliveryId = id; }
+    public void setServerBaseUrl(String url) { this.serverBaseUrl = url; }
+    public boolean isRunning() { return running; }
+
+    private void startLocationUpdates() {
+        LocationRequest req = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, UPDATE_INTERVAL)
+                .setMinUpdateIntervalMillis(10_000L)
+                .setMaxUpdateDelayMillis(UPDATE_INTERVAL)
+                .build();
+
+        locationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(LocationResult result) {
+                if (result == null) return;
+                Location loc = result.getLastLocation();
+                if (loc == null) return;
+                lastLat = loc.getLatitude();
+                lastLng = loc.getLongitude();
+                int acc  = (int) loc.getAccuracy();
+                updateNotification(String.format("📍 %.5f, %.5f  정확도 ±%dm", lastLat, lastLng, acc));
+                long now = System.currentTimeMillis();
+                if (!deliveryId.isEmpty() &amp;&amp; now - lastServerSend >= SERVER_INTERVAL) {
+                    lastServerSend = now;
+                    sendToServer(lastLat, lastLng, now);
+                }
+            }
+        };
+
+        try {
+            fusedClient.requestLocationUpdates(req, locationCallback, Looper.getMainLooper());
+        } catch (SecurityException e) {
+            Log.e(TAG, "위치 권한 없음", e);
+        }
+    }
+
+    private void stopLocationUpdates() {
+        if (locationCallback != null) {
+            fusedClient.removeLocationUpdates(locationCallback);
+            locationCallback = null;
+        }
+    }
+
+    private void sendToServer(double lat, double lng, long timestamp) {
+        if (serverBaseUrl.isEmpty() || deliveryId.isEmpty()) return;
+        String url = serverBaseUrl.replaceAll("/$", "") + "/tables/deliveries/" + deliveryId;
+        try {
+            JSONObject body = new JSONObject();
+            body.put("current_lat",    lat);
+            body.put("current_lng",    lng);
+            body.put("gps_updated_at", timestamp);
+            body.put("status",         "transit");
+            MediaType JSON = MediaType.get("application/json; charset=utf-8");
+            Request patchReq = new Request.Builder().url(url).patch(RequestBody.create(body.toString(), JSON)).build();
+            httpClient.newCall(patchReq).enqueue(new Callback() {
+                @Override public void onFailure(Call call, IOException e) { sendPut(url, body, JSON); }
+                @Override public void onResponse(Call call, Response response) {
+                    if (!response.isSuccessful()) sendPut(url, body, JSON);
+                    response.close();
+                }
+            });
+        } catch (Exception e) {
+            Log.e(TAG, "sendToServer 오류", e);
+        }
+    }
+
+    private void sendPut(String url, JSONObject patchBody, MediaType JSON) {
+        Request getReq = new Request.Builder().url(url).get().build();
+        httpClient.newCall(getReq).enqueue(new Callback() {
+            @Override public void onFailure(Call call, IOException e) { Log.e(TAG, "GET 실패", e); }
+            @Override public void onResponse(Call call, Response response) throws IOException {
+                if (!response.isSuccessful()) { response.close(); return; }
+                try {
+                    String bodyStr = response.body().string();
+                    response.close();
+                    JSONObject merged = new JSONObject(bodyStr);
+                    java.util.Iterator&lt;String&gt; keys = patchBody.keys();
+                    while (keys.hasNext()) { String k = keys.next(); merged.put(k, patchBody.get(k)); }
+                    Request putReq = new Request.Builder().url(url).put(RequestBody.create(merged.toString(), JSON)).build();
+                    httpClient.newCall(putReq).enqueue(new Callback() {
+                        @Override public void onFailure(Call c, IOException e) { Log.e(TAG, "PUT 실패", e); }
+                        @Override public void onResponse(Call c, Response r) { r.close(); }
+                    });
+                } catch (Exception e) { Log.e(TAG, "PUT 오류", e); }
+            }
+        });
+    }
+
+    private void createNotificationChannel() {
+        NotificationChannel ch = new NotificationChannel(CHANNEL_ID, "GPS 위치 전송", NotificationManager.IMPORTANCE_LOW);
+        ch.setDescription("배송 중 GPS 위치를 서버로 전송합니다");
+        ch.setShowBadge(false);
+        NotificationManager nm = getSystemService(NotificationManager.class);
+        if (nm != null) nm.createNotificationChannel(ch);
+    }
+
+    private Notification buildNotification(String content) {
+        Intent tap = new Intent(this, MainActivity.class);
+        tap.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent pi = PendingIntent.getActivity(this, 0, tap, PendingIntent.FLAG_IMMUTABLE);
+        return new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("🚛 화물운송 — GPS 전송 중")  // ★ 알림 제목 변경 가능
+                .setContentText(content)
+                .setSmallIcon(R.drawable.ic_gps)
+                .setContentIntent(pi)
+                .setOngoing(true)
+                .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+                .build();
+    }
+
+    private void updateNotification(String content) {
+        NotificationManager nm = getSystemService(NotificationManager.class);
+        if (nm != null) nm.notify(NOTIF_ID, buildNotification(content));
+    }
+}</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- 8-3: WebAppInterface -->
+    <div class="file-card">
+        <div class="file-card-head">
+            <div class="file-num n-yellow">8-3</div>
+            <div>
+                <h2>WebAppInterface.java</h2>
+                <p>android/app/src/main/java/com/cargo/driver/WebAppInterface.java</p>
+            </div>
+            <a href="https://github.com/rpaakdi1-spec/cargo-driver-app/new/main?filename=android/app/src/main/java/com/cargo/driver/WebAppInterface.java" target="_blank" class="link-btn link-btn-primary" style="margin-left:auto;font-size:.78rem;">
+                <i class="fab fa-github"></i> GitHub에서 만들기
+            </a>
+        </div>
+        <div class="file-card-body">
+            <div class="code-wrap">
+                <div class="code-header">
+                    <span><i class="fab fa-java"></i> WebAppInterface.java</span>
+                    <button class="copy-btn" onclick="copyCode(this, 'code8c')"><i class="fas fa-copy"></i> 전체 복사</button>
+                </div>
+                <pre id="code8c">package com.cargo.driver;
+
+import android.webkit.JavascriptInterface;
+import android.util.Log;
+
+public class WebAppInterface {
+
+    private static final String TAG = "WebAppInterface";
+    private final MainActivity activity;
+    private final android.content.Context context;
+
+    public WebAppInterface(android.content.Context ctx, MainActivity act) {
+        this.context  = ctx;
+        this.activity = act;
+    }
+
+    @JavascriptInterface
+    public void startGps(String deliveryId) {
+        Log.d(TAG, "JS → startGps: " + deliveryId);
+        activity.runOnUiThread(() -> activity.startGpsService(deliveryId));
+    }
+
+    @JavascriptInterface
+    public void stopGps() {
+        Log.d(TAG, "JS → stopGps");
+        activity.runOnUiThread(() -> activity.stopGpsService());
+    }
+
+    @JavascriptInterface
+    public void setDeliveryId(String deliveryId) {
+        Log.d(TAG, "JS → setDeliveryId: " + deliveryId);
+        if (activity.isGpsServiceRunning()) activity.startGpsService(deliveryId);
+    }
+
+    @JavascriptInterface
+    public void moveToBackground() {
+        Log.d(TAG, "JS → moveToBackground");
+        activity.runOnUiThread(() -> {
+            android.content.Intent home = new android.content.Intent(android.content.Intent.ACTION_MAIN);
+            home.addCategory(android.content.Intent.CATEGORY_HOME);
+            home.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+            activity.startActivity(home);
+        });
+    }
+
+    @JavascriptInterface
+    public String isGpsRunning() { return String.valueOf(activity.isGpsServiceRunning()); }
+
+    @JavascriptInterface
+    public String isNativeApp() { return "true"; }
+
+    @JavascriptInterface
+    public void showToast(String message) {
+        activity.runOnUiThread(() ->
+            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show());
+    }
+}</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════
+         파일 9: res 파일들 (4개)
+    ═══════════════════════════════════ -->
+    <p class="sec-title" id="file-9"><i class="fas fa-palette"></i> 파일 9 — 리소스 파일 4개</p>
+
+    <!-- 9-1: strings.xml -->
+    <div class="file-card" style="margin-bottom:12px;">
+        <div class="file-card-head">
+            <div class="file-num n-red">9-1</div>
+            <div>
+                <h2>strings.xml — 앱 이름</h2>
+                <p>android/app/src/main/res/values/strings.xml</p>
+            </div>
+            <a href="https://github.com/rpaakdi1-spec/cargo-driver-app/new/main?filename=android/app/src/main/res/values/strings.xml" target="_blank" class="link-btn link-btn-primary" style="margin-left:auto;font-size:.78rem;">
+                <i class="fab fa-github"></i> GitHub에서 만들기
+            </a>
+        </div>
+        <div class="file-card-body">
+            <div class="alert alert-info"><i class="fas fa-tag"></i><span><strong>화물운송 기사</strong> 부분을 원하는 앱 이름으로 바꿔도 됩니다.</span></div>
+            <div class="code-wrap">
+                <div class="code-header"><span><i class="fas fa-file-code"></i> strings.xml</span><button class="copy-btn" onclick="copyCode(this,'code9a')"><i class="fas fa-copy"></i> 전체 복사</button></div>
+                <pre id="code9a">&lt;resources&gt;
+    &lt;string name="app_name"&gt;화물운송 기사&lt;/string&gt;
+&lt;/resources&gt;</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- 9-2: themes.xml -->
+    <div class="file-card" style="margin-bottom:12px;">
+        <div class="file-card-head">
+            <div class="file-num n-red">9-2</div>
+            <div>
+                <h2>themes.xml — 앱 테마/색상</h2>
+                <p>android/app/src/main/res/values/themes.xml</p>
+            </div>
+            <a href="https://github.com/rpaakdi1-spec/cargo-driver-app/new/main?filename=android/app/src/main/res/values/themes.xml" target="_blank" class="link-btn link-btn-primary" style="margin-left:auto;font-size:.78rem;">
+                <i class="fab fa-github"></i> GitHub에서 만들기
+            </a>
+        </div>
+        <div class="file-card-body">
+            <div class="code-wrap">
+                <div class="code-header"><span><i class="fas fa-file-code"></i> themes.xml</span><button class="copy-btn" onclick="copyCode(this,'code9b')"><i class="fas fa-copy"></i> 전체 복사</button></div>
+                <pre id="code9b">&lt;resources&gt;
+    &lt;style name="Theme.CargoDriver" parent="Theme.MaterialComponents.DayNight.NoActionBar"&gt;
+        &lt;item name="colorPrimary"&gt;#1D4ED8&lt;/item&gt;
+        &lt;item name="colorPrimaryVariant"&gt;#1E3A8A&lt;/item&gt;
+        &lt;item name="colorOnPrimary"&gt;#FFFFFF&lt;/item&gt;
+        &lt;item name="android:statusBarColor"&gt;#0F172A&lt;/item&gt;
+        &lt;item name="android:windowBackground"&gt;#0F172A&lt;/item&gt;
+    &lt;/style&gt;
+    &lt;color name="purple_500"&gt;#1D4ED8&lt;/color&gt;
+&lt;/resources&gt;</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- 9-3: activity_main.xml -->
+    <div class="file-card" style="margin-bottom:12px;">
+        <div class="file-card-head">
+            <div class="file-num n-red">9-3</div>
+            <div>
+                <h2>activity_main.xml — 화면 레이아웃</h2>
+                <p>android/app/src/main/res/layout/activity_main.xml</p>
+            </div>
+            <a href="https://github.com/rpaakdi1-spec/cargo-driver-app/new/main?filename=android/app/src/main/res/layout/activity_main.xml" target="_blank" class="link-btn link-btn-primary" style="margin-left:auto;font-size:.78rem;">
+                <i class="fab fa-github"></i> GitHub에서 만들기
+            </a>
+        </div>
+        <div class="file-card-body">
+            <div class="code-wrap">
+                <div class="code-header"><span><i class="fas fa-file-code"></i> activity_main.xml</span><button class="copy-btn" onclick="copyCode(this,'code9c')"><i class="fas fa-copy"></i> 전체 복사</button></div>
+                <pre id="code9c">&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/swipeRefresh"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"&gt;
+
+    &lt;WebView
+        android:id="@+id/webView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" /&gt;
+
+&lt;/androidx.swiperefreshlayout.widget.SwipeRefreshLayout&gt;</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- 9-4: ic_gps.xml -->
+    <div class="file-card">
+        <div class="file-card-head">
+            <div class="file-num n-red">9-4</div>
+            <div>
+                <h2>ic_gps.xml — 앱 아이콘</h2>
+                <p>android/app/src/main/res/drawable/ic_gps.xml</p>
+            </div>
+            <a href="https://github.com/rpaakdi1-spec/cargo-driver-app/new/main?filename=android/app/src/main/res/drawable/ic_gps.xml" target="_blank" class="link-btn link-btn-primary" style="margin-left:auto;font-size:.78rem;">
+                <i class="fab fa-github"></i> GitHub에서 만들기
+            </a>
+        </div>
+        <div class="file-card-body">
+            <div class="code-wrap">
+                <div class="code-header"><span><i class="fas fa-file-code"></i> ic_gps.xml</span><button class="copy-btn" onclick="copyCode(this,'code9d')"><i class="fas fa-copy"></i> 전체 복사</button></div>
+                <pre id="code9d">&lt;vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="@android:color/white"&gt;
+  &lt;path
+      android:fillColor="@android:color/white"
+      android:pathData="M12,8c-2.21,0 -4,1.79 -4,4s1.79,4 4,4 4,-1.79 4,-4 -1.79,-4 -4,-4zM20.94,11c-0.46,-4.17 -3.77,-7.48 -7.94,-7.94L13,1h-2v2.06C6.83,3.52 3.52,6.83 3.06,11H1v2h2.06c0.46,4.17 3.77,7.48 7.94,7.94L11,23h2v-2.06c4.17,-0.46 7.48,-3.77 7.94,-7.94H23v-2h-2.06zM12,19c-3.87,0 -7,-3.13 -7,-7s3.13,-7 7,-7 7,3.13 7,7 -3.13,7 -7,7z"/&gt;
+&lt;/vector&gt;</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- 완료 안내 -->
+    <div class="alert alert-success" style="margin-top:28px; padding:16px 20px;">
+        <i class="fas fa-check-circle" style="font-size:1.3rem;"></i>
+        <div>
+            <strong style="font-size:1rem;">파일 9개 모두 만들었으면 완료!</strong><br>
+            <span style="font-size:.85rem;">마지막 파일 Commit 후 자동으로 Actions가 시작됩니다. 5~7분 후 APK가 Releases에 업로드됩니다.</span><br>
+            <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+                <a href="https://github.com/rpaakdi1-spec/cargo-driver-app/actions" target="_blank" class="link-btn link-btn-primary" style="font-size:.82rem;"><i class="fas fa-robot"></i> Actions 빌드 확인</a>
+                <a href="https://github.com/rpaakdi1-spec/cargo-driver-app/settings/actions" target="_blank" class="link-btn link-btn-outline" style="font-size:.82rem;"><i class="fas fa-key"></i> Actions 권한 설정</a>
+                <a href="deploy-guide.html" class="link-btn link-btn-outline" style="font-size:.82rem;"><i class="fas fa-download"></i> APK 다운로드 탭</a>
+            </div>
+        </div>
+    </div>
+
+</div><!-- /wrap -->
+
+<div id="toast" style="display:none;position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#1e293b;border:1px solid rgba(255,255,255,.15);color:#e2e8f0;padding:10px 20px;border-radius:10px;font-size:.85rem;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.4);">
+    ✅ 복사 완료!
+</div>
+
+<script>
+function copyCode(btn, id) {
+    const el = document.getElementById(id);
+    // pre 태그의 텍스트를 HTML 엔티티 디코딩해서 복사
+    const decoded = el.innerHTML
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'");
+
+    navigator.clipboard.writeText(decoded).then(() => {
+        btn.classList.add('copied');
+        btn.innerHTML = '<i class="fas fa-check"></i> 복사됨';
+        showToast();
+        setTimeout(() => {
+            btn.classList.remove('copied');
+            btn.innerHTML = '<i class="fas fa-copy"></i> 전체 복사';
+        }, 2500);
+    }).catch(() => {
+        // fallback
+        const ta = document.createElement('textarea');
+        ta.value = decoded;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        btn.classList.add('copied');
+        btn.innerHTML = '<i class="fas fa-check"></i> 복사됨';
+        showToast();
+        setTimeout(() => {
+            btn.classList.remove('copied');
+            btn.innerHTML = '<i class="fas fa-copy"></i> 전체 복사';
+        }, 2500);
+    });
+}
+
+function showToast() {
+    const t = document.getElementById('toast');
+    t.style.display = 'block';
+    clearTimeout(window._tt);
+    window._tt = setTimeout(() => t.style.display = 'none', 2000);
+}
+
+function scrollToFile(n) {
+    const el = document.getElementById('file-' + n);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+</script>
+</body>
+</html>

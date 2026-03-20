@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>관리자 - 화물운송 관리 시스템</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css?v=20250314A">
+    <link rel="stylesheet" href="css/admin.css?v=20250314A">
+    <style>
+        .notif-item {
+            display:flex; align-items:flex-start; gap:10px;
+            padding:10px 14px; border-bottom:1px solid #1e293b;
+            transition:background 0.15s;
+        }
+        .notif-item:hover { background:#0f172a; }
+        .notif-icon {
+            width:32px; height:32px; border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            font-size:0.85rem; flex-shrink:0; margin-top:2px;
+        }
+        .notif-body { flex:1; min-width:0; }
+        .notif-msg  { font-size:0.82rem; color:#e2e8f0; line-height:1.4; word-break:keep-all; }
+        .notif-time { font-size:0.72rem; color:#64748b; margin-top:2px; }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="main-header">
+        <div class="header-content">
+            <div class="logo">
+                <a href="index.html" style="color:inherit; text-decoration:none;">
+                    <i class="fas fa-truck"></i>
+                </a>
+                <span>관리자 페이지</span>
+            </div>
+            <div class="header-actions" id="adminHeaderActions" style="display:none;">
+                <a href="gallery.html" style="text-decoration:none;">
+                    <span class="room-badge" style="background:rgba(14,165,233,0.2); color:#7dd3fc; cursor:pointer;">
+                        <i class="fas fa-images"></i> 사진 보관함
+                    </span>
+                </a>
+                <a href="deploy-guide.html" style="text-decoration:none;">
+                    <span class="room-badge" style="background:rgba(99,102,241,0.2); color:#a5b4fc; cursor:pointer;">
+                        <i class="fas fa-rocket"></i> 배포 가이드
+                    </span>
+                </a>
+                <!-- ★ 알림 벨 -->
+                <div style="position:relative;" id="adminNotifWrapper">
+                    <button onclick="toggleAdminNotifPanel()"
+                        style="position:relative;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);
+                               color:#fff;border-radius:10px;padding:6px 10px;cursor:pointer;font-size:0.85rem;
+                               display:flex;align-items:center;gap:5px;">
+                        <i class="fas fa-bell"></i>
+                        <span id="adminNotifBadge" data-count="0"
+                            style="display:none;position:absolute;top:-6px;right:-6px;
+                                   background:#ef4444;color:#fff;border-radius:50%;
+                                   width:18px;height:18px;font-size:0.65rem;font-weight:700;
+                                   align-items:center;justify-content:center;line-height:1;">0</span>
+                    </button>
+                    <!-- 알림 드롭다운 -->
+                    <div id="adminNotifPanel"
+                        style="display:none;position:absolute;right:0;top:calc(100% + 8px);
+                               width:320px;max-height:400px;overflow-y:auto;
+                               background:#1e293b;border:1px solid #334155;border-radius:12px;
+                               box-shadow:0 8px 32px rgba(0,0,0,0.5);z-index:1000;">
+                        <div style="padding:10px 14px;border-bottom:1px solid #334155;
+                                    font-size:0.8rem;font-weight:700;color:#94a3b8;
+                                    display:flex;align-items:center;gap:6px;">
+                            <i class="fas fa-bell" style="color:#fbbf24;"></i> 실시간 알림
+                            <span style="font-size:0.7rem;color:#64748b;margin-left:auto;">10초마다 갱신</span>
+                        </div>
+                        <div id="adminNotifList">
+                            <div class="notif-empty" style="padding:20px;text-align:center;color:#64748b;font-size:0.82rem;">
+                                <i class="fas fa-bell-slash" style="font-size:1.5rem;display:block;margin-bottom:8px;"></i>
+                                새 알림 없음
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <span class="room-badge" style="background:rgba(255,255,255,0.15); color:#86efac;">
+                    <i class="fas fa-shield-alt"></i> 관리자
+                </span>
+                <button class="btn btn-outline btn-sm" id="btnAdminLogout">
+                    <i class="fas fa-sign-out-alt"></i> 로그아웃
+                </button>
+                <a href="index.html" class="btn btn-outline btn-sm">
+                    <i class="fas fa-home"></i> 홈
+                </a>
+            </div>
+            <div class="header-actions" id="adminHeaderHome">
+                <a href="index.html" class="btn btn-outline btn-sm">
+                    <i class="fas fa-home"></i> 홈
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Admin Login Overlay -->
+    <div class="admin-login-overlay" id="adminLoginOverlay">
+        <div class="admin-login-card">
+            <div class="admin-login-icon"><i class="fas fa-shield-alt"></i></div>
+            <h2>관리자 전용</h2>
+            <p>관리자 비밀번호를 입력하세요</p>
+            <form id="adminLoginForm" onsubmit="event.preventDefault(); handleAdminLogin();" autocomplete="on">
+            <!-- 접근성/자동완성 표준 준수: 숨김 username 필드 -->
+            <input type="text" name="username" value="admin" autocomplete="username" style="display:none;" aria-hidden="true" />
+            <div class="form-group">
+                <div class="input-with-icon">
+                    <input type="password" id="adminPw" placeholder="관리자 비밀번호 입력" autocomplete="current-password" name="password" />
+                    <button type="button" class="toggle-pw" onclick="togglePassword('adminPw')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="adminLoginError" class="error-msg" style="display:none;"></div>
+            <button type="submit" class="btn btn-primary btn-block" id="adminLoginBtn">
+                <i class="fas fa-sign-in-alt"></i> 로그인
+            </button>
+            </form>
+            <a href="index.html" class="btn btn-outline btn-block" style="margin-top:10px;">
+                <i class="fas fa-arrow-left"></i> 돌아가기
+            </a>
+        </div>
+    </div>
+
+    <!-- Admin Main -->
+    <main class="admin-main" id="adminMain" style="display:none;">
+        <!-- Stats -->
+        <div class="admin-stats">
+            <div class="admin-stat-card">
+                <div class="asc-icon asc-blue"><i class="fas fa-building"></i></div>
+                <div class="asc-info">
+                    <span class="asc-num" id="aTotalRooms">0</span>
+                    <span class="asc-label">고객사 룸</span>
+                </div>
+            </div>
+            <div class="admin-stat-card">
+                <div class="asc-icon asc-orange"><i class="fas fa-truck"></i></div>
+                <div class="asc-info">
+                    <span class="asc-num" id="aTotalDeliveries">0</span>
+                    <span class="asc-label">전체 배송</span>
+                </div>
+            </div>
+            <div class="admin-stat-card">
+                <div class="asc-icon asc-green"><i class="fas fa-shipping-fast"></i></div>
+                <div class="asc-info">
+                    <span class="asc-num" id="aActiveDeliveries">0</span>
+                    <span class="asc-label">운송중</span>
+                </div>
+            </div>
+            <div class="admin-stat-card">
+                <div class="asc-icon asc-purple"><i class="fas fa-check-double"></i></div>
+                <div class="asc-info">
+                    <span class="asc-num" id="aCompletedDeliveries">0</span>
+                    <span class="asc-label">완료</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="admin-rooms">
+                <i class="fas fa-building"></i> 고객사 관리
+            </button>
+            <button class="tab-btn" data-tab="admin-deliveries">
+                <i class="fas fa-truck"></i> 전체 배송 현황
+            </button>
+            <button class="tab-btn" data-tab="admin-settings">
+                <i class="fas fa-cog"></i> 설정
+            </button>
+        </div>
+
+        <!-- Rooms Tab -->
+        <div class="tab-content active" id="tab-admin-rooms">
+            <div class="tab-toolbar">
+                <h3><i class="fas fa-building"></i> 고객사 룸 관리</h3>
+                <button class="btn btn-primary btn-sm" id="adminCreateRoomBtn">
+                    <i class="fas fa-plus"></i> 룸 생성
+                </button>
+            </div>
+            <div class="admin-table-wrap">
+                <table class="admin-table" id="adminRoomsTable">
+                    <thead>
+                        <tr>
+                            <th>고객사명</th>
+                            <th>담당자 연락처</th>
+                            <th>설명</th>
+                            <th>배송 수</th>
+                            <th>생성일</th>
+                            <th>관리</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminRoomsBody">
+                        <tr><td colspan="6" class="loading-cell"><i class="fas fa-circle-notch fa-spin"></i> 로딩 중...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Deliveries Tab -->
+        <div class="tab-content" id="tab-admin-deliveries">
+            <div class="tab-toolbar">
+                <h3><i class="fas fa-truck"></i> 전체 배송 현황</h3>
+                <div class="search-bar compact">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="adminSearchDelivery" placeholder="검색..." />
+                </div>
+            </div>
+            <div class="admin-table-wrap">
+                <table class="admin-table" id="adminDeliveriesTable">
+                    <thead>
+                        <tr>
+                            <th>고객사</th>
+                            <th>기사명</th>
+                            <th>차량번호</th>
+                            <th>화물</th>
+                            <th>구간</th>
+                            <th>상태</th>
+                            <th>서류</th>
+                            <th>GPS</th>
+                            <th>등록일</th>
+                            <th>관리</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminDeliveriesBody">
+                        <tr><td colspan="10" class="loading-cell"><i class="fas fa-circle-notch fa-spin"></i> 로딩 중...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div class="tab-content" id="tab-admin-settings">
+            <div class="tab-toolbar">
+                <h3><i class="fas fa-cog"></i> 시스템 설정</h3>
+            </div>
+
+            <div style="max-width:600px; margin:0 auto; padding:0 16px 40px;">
+
+                <!-- UVIS 서버 연결 상태 -->
+                <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:24px;">
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+                        <div style="width:44px; height:44px; background:linear-gradient(135deg,#6366f1,#8b5cf6); border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            <i class="fas fa-server" style="color:white; font-size:1.1rem;"></i>
+                        </div>
+                        <div>
+                            <h4 style="margin:0; color:var(--text-primary);">UVIS 이미지 서버</h4>
+                            <p style="margin:0; color:var(--gray-400); font-size:0.82rem;">www.rhkdtls.cloud · MinIO · cargo-images</p>
+                        </div>
+                    </div>
+
+                    <!-- 연결 상태 -->
+                    <div id="imgbbStatus" style="padding:12px 16px; border-radius:10px; margin-bottom:20px; font-size:0.9rem; display:flex; align-items:center; gap:10px; background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.3); color:#a5b4fc;">
+                        <i class="fas fa-circle-notch fa-spin"></i> 서버 연결 확인 중...
+                    </div>
+
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <button class="btn btn-outline" id="btnTestImgBB">
+                            <i class="fas fa-vial"></i> 연결 테스트
+                        </button>
+                    </div>
+
+                    <div style="margin-top:16px; border-top:1px solid var(--border); padding-top:14px;">
+                        <p style="margin:0; font-size:0.82rem; color:var(--gray-400); line-height:1.8;">
+                            <i class="fas fa-info-circle" style="color:#6366f1;"></i>
+                            기사님이 사진을 찍으면 <strong>자동으로 UVIS 서버에 저장</strong>됩니다.<br>
+                            <i class="fas fa-folder" style="color:#6366f1;"></i>
+                            저장 위치: <code style="font-size:0.78rem;">cargo-images</code> 폴더 (MinIO uvis-files 버킷)<br>
+                            <i class="fas fa-shield-alt" style="color:#6366f1;"></i>
+                            업로드 전용 계정 사용 — UVIS 내부 데이터 접근 불가
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 기사 기기에 설정 공유 -->
+                <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:24px; margin-top:16px;">
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+                        <div style="width:44px; height:44px; background:linear-gradient(135deg,#10b981,#059669); border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            <i class="fas fa-mobile-alt" style="color:white; font-size:1.1rem;"></i>
+                        </div>
+                        <div>
+                            <h4 style="margin:0; color:var(--text-primary);">기사 기기에 설정 공유</h4>
+                            <p style="margin:0; color:var(--gray-400); font-size:0.82rem;">driver.html 접속 링크 생성</p>
+                        </div>
+                    </div>
+                    <p style="color:var(--gray-300); font-size:0.85rem; margin:0 0 14px;">
+                        기사님이 링크로 접속하면 이미지 업로드 설정이 자동으로 적용됩니다.
+                    </p>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <button class="btn btn-primary" id="btnGenDriverLink" style="background:linear-gradient(135deg,#10b981,#059669);">
+                            <i class="fas fa-link"></i> 기사용 링크 생성
+                        </button>
+                        <button class="btn btn-outline" id="btnCopyDriverLink" style="display:none;">
+                            <i class="fas fa-copy"></i> 링크 복사
+                        </button>
+                    </div>
+                    <div id="driverLinkBox" style="display:none; margin-top:12px; padding:10px; background:rgba(0,0,0,0.2); border-radius:8px; font-size:0.78rem; font-family:monospace; word-break:break-all; color:#86efac;"></div>
+                </div>
+
+                <!-- 이미지 저장 현황 -->
+                <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:24px; margin-top:16px;">
+                    <h4 style="margin:0 0 16px; color:var(--text-primary); display:flex; align-items:center; gap:8px;">
+                        <i class="fas fa-chart-bar" style="color:#6366f1;"></i> 이미지 저장 현황
+                    </h4>
+                    <div id="imgStatsArea" style="color:var(--gray-400); font-size:0.88rem;">
+                        <i class="fas fa-circle-notch fa-spin"></i> 분석 중...
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Edit Room Modal -->
+    <div class="modal-overlay" id="adminRoomModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="adminRoomModalTitle"><i class="fas fa-building"></i> 고객사 룸</h3>
+                <button class="modal-close" id="closeAdminRoomModal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="adminRoomForm">
+                    <input type="hidden" id="adminRoomId" />
+                    <div class="form-group">
+                        <label><i class="fas fa-building"></i> 고객사명 <span class="required">*</span></label>
+                        <input type="text" id="adminRoomName" required autocomplete="off" />
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-lock"></i> 비밀번호 <span id="adminPwNote">(새 비밀번호 입력시 변경)</span></label>
+                        <div class="input-with-icon">
+                            <input type="password" id="adminRoomPw" placeholder="변경 시에만 입력" autocomplete="new-password" />
+                            <button type="button" class="toggle-pw" onclick="togglePassword('adminRoomPw')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-phone"></i> 담당자 연락처</label>
+                        <input type="text" id="adminRoomContact" />
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-sticky-note"></i> 설명</label>
+                        <textarea id="adminRoomDesc"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline" id="cancelAdminRoomModal">취소</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 저장
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Confirm Delete Modal -->
+    <div class="modal-overlay" id="confirmDeleteModal">
+        <div class="modal modal-sm">
+            <div class="modal-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> 삭제 확인</h3>
+                <button class="modal-close" id="closeConfirmDelete"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmDeleteMsg">정말 삭제하시겠습니까?</p>
+                <div class="form-actions">
+                    <button class="btn btn-outline" id="cancelConfirmDelete">취소</button>
+                    <button class="btn btn-danger" id="confirmDeleteBtn">
+                        <i class="fas fa-trash"></i> 삭제
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="js/utils.js?v=20250320I"></script>
+    <script src="js/admin.js?v=20250320I"></script>
+    <script>
+        // 알림 드롭다운 외부 클릭 시 닫기
+        document.addEventListener('click', (e) => {
+            const wrapper = document.getElementById('adminNotifWrapper');
+            const panel   = document.getElementById('adminNotifPanel');
+            if (panel && panel.style.display !== 'none' && wrapper && !wrapper.contains(e.target)) {
+                panel.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

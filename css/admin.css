@@ -1,0 +1,347 @@
+/* ===========================
+   관리자 페이지 스타일 - admin.css
+=========================== */
+
+/* Admin Login Overlay */
+.admin-login-overlay {
+    position: fixed;
+    inset: 0;
+    top: 64px;
+    background: linear-gradient(135deg, #f0f4ff 0%, #e0e8ff 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 20px;
+}
+
+.admin-login-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 40px;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: var(--shadow-xl);
+    text-align: center;
+    animation: fadeInUp 0.3s ease;
+}
+
+.admin-login-icon {
+    width: 80px;
+    height: 80px;
+    background: #e0e7ff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+}
+
+.admin-login-icon i {
+    font-size: 2rem;
+    color: #6366f1;
+}
+
+.admin-login-card h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--gray-900);
+}
+
+.admin-login-card p {
+    color: var(--gray-500);
+    margin-bottom: 24px;
+    font-size: 0.9rem;
+}
+
+.admin-hint {
+    margin-top: 16px;
+    font-size: 0.82rem;
+    color: var(--gray-500);
+    background: var(--gray-50);
+    padding: 10px;
+    border-radius: var(--radius-sm);
+}
+
+/* Admin Main */
+.admin-main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px 24px 60px;
+}
+
+/* Admin Stats */
+.admin-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 8px;
+}
+
+.admin-stat-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--gray-200);
+    transition: var(--transition);
+}
+
+.admin-stat-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+}
+
+.asc-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+
+.asc-blue { background: var(--primary-light); color: var(--primary); }
+.asc-orange { background: var(--warning-light); color: var(--warning); }
+.asc-green { background: var(--success-light); color: var(--success); }
+.asc-purple { background: #ede9fe; color: #7c3aed; }
+
+.asc-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.asc-num {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    line-height: 1.2;
+}
+
+.asc-label {
+    font-size: 0.82rem;
+    color: var(--gray-500);
+    font-weight: 500;
+}
+
+/* Admin Table */
+.admin-table-wrap {
+    background: var(--white);
+    border-radius: var(--radius);
+    border: 1px solid var(--gray-200);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    overflow-x: auto;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+}
+
+.admin-table thead th {
+    background: var(--gray-50);
+    padding: 14px 16px;
+    text-align: left;
+    font-weight: 700;
+    color: var(--gray-700);
+    border-bottom: 2px solid var(--gray-200);
+    white-space: nowrap;
+}
+
+.admin-table tbody tr {
+    border-bottom: 1px solid var(--gray-100);
+    transition: var(--transition);
+}
+
+.admin-table tbody tr:hover {
+    background: var(--gray-50);
+}
+
+.admin-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.admin-table td {
+    padding: 12px 16px;
+    color: var(--gray-700);
+    vertical-align: middle;
+}
+
+.loading-cell {
+    text-align: center;
+    padding: 40px !important;
+    color: var(--gray-400);
+}
+
+.table-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.btn-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    transition: var(--transition);
+}
+
+.btn-icon-edit {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+.btn-icon-edit:hover {
+    background: var(--primary);
+    color: var(--white);
+}
+
+.btn-icon-delete {
+    background: var(--danger-light);
+    color: var(--danger);
+}
+
+.btn-icon-delete:hover {
+    background: var(--danger);
+    color: var(--white);
+}
+
+.btn-icon-view {
+    background: var(--success-light);
+    color: var(--success);
+}
+
+.btn-icon-view:hover {
+    background: var(--success);
+    color: var(--white);
+}
+
+/* Doc status in table */
+.doc-status-icons {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.doc-pill {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.doc-pill.has { background: var(--success-light); color: var(--success); }
+.doc-pill.none { background: var(--gray-100); color: var(--gray-400); }
+
+/* GPS in table */
+.gps-cell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+}
+
+.gps-active {
+    color: var(--success);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.gps-inactive {
+    color: var(--gray-400);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* PIN 안내 박스 */
+.pin-guide-box {
+    background: var(--primary-light);
+    border: 1px solid #bfdbfe;
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    font-size: 0.88rem;
+    color: var(--primary-dark);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.pin-guide-box i {
+    flex-shrink: 0;
+}
+
+/* driver.css 추가 - PIN 입력 래퍼 */
+.pin-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.pin-input-wrap input {
+    width: 100%;
+    padding: 10px 44px 10px 14px;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    font-size: 1.1rem;
+    font-family: var(--font);
+    letter-spacing: 4px;
+    transition: var(--transition);
+}
+
+.pin-input-wrap input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.pin-input-wrap .toggle-pw {
+    position: absolute;
+    right: 10px;
+}
+
+@media (max-width: 1024px) {
+    .admin-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-stats {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .admin-stat-card {
+        padding: 16px;
+    }
+
+    .asc-num { font-size: 1.4rem; }
+
+    .admin-main {
+        padding: 16px 16px 40px;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-stats {
+        grid-template-columns: 1fr 1fr;
+    }
+}

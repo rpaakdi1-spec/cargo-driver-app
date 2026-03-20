@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사용법 안내 - 화물운송 관리 시스템</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --primary:   #2563eb;
+            --primary-d: #1d4ed8;
+            --customer:  #0891b2;
+            --driver:    #16a34a;
+            --admin:     #7c3aed;
+            --warning:   #d97706;
+            --gray-50:   #f8fafc;
+            --gray-100:  #f1f5f9;
+            --gray-200:  #e2e8f0;
+            --gray-400:  #94a3b8;
+            --gray-500:  #64748b;
+            --gray-700:  #334155;
+            --gray-900:  #0f172a;
+            --white:     #ffffff;
+            --radius:    14px;
+            --shadow:    0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: var(--gray-50);
+            color: var(--gray-700);
+            line-height: 1.6;
+        }
+
+        /* ── 헤더 ── */
+        .guide-header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #0891b2 100%);
+            color: white;
+            padding: 0;
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            box-shadow: 0 2px 16px rgba(37,99,235,0.35);
+        }
+        .guide-header .inner {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .guide-header .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+        .guide-header a.back {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            border: 1px solid rgba(255,255,255,0.25);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s;
+        }
+        .guide-header a.back:hover { background: rgba(255,255,255,0.15); }
+
+        /* ── 히어로 ── */
+        .hero {
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #0891b2 100%);
+            color: white;
+            padding: 48px 20px 56px;
+            text-align: center;
+        }
+        .hero h1 {
+            font-size: 1.9rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+        .hero p {
+            font-size: 1rem;
+            opacity: 0.85;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* ── 탭 네비 ── */
+        .tab-nav {
+            background: white;
+            border-bottom: 2px solid var(--gray-200);
+            position: sticky;
+            top: 52px;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .tab-nav .tab-inner {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .tab-nav .tab-inner::-webkit-scrollbar { display: none; }
+        .tab-btn {
+            flex: 0 0 auto;
+            padding: 14px 24px;
+            border: none;
+            background: none;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--gray-500);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            transition: color 0.2s, border-color 0.2s;
+            white-space: nowrap;
+        }
+        .tab-btn:hover { color: var(--gray-700); }
+        .tab-btn.active-customer { color: var(--customer); border-color: var(--customer); }
+        .tab-btn.active-driver   { color: var(--driver);   border-color: var(--driver);   }
+        .tab-btn.active-admin    { color: var(--admin);    border-color: var(--admin);    }
+
+        /* ── 메인 컨텐츠 ── */
+        .guide-body {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 32px 16px 60px;
+        }
+
+        /* ── 패널 ── */
+        .guide-panel { display: none; }
+        .guide-panel.active { display: block; }
+
+        /* ── 섹션 카드 ── */
+        .section-card {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .section-card-head {
+            padding: 18px 22px 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--gray-100);
+        }
+        .section-card-head .icon {
+            width: 44px; height: 44px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        .section-card-head h2 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+        .section-card-head p {
+            font-size: 0.82rem;
+            color: var(--gray-400);
+            margin-top: 2px;
+        }
+        .section-card-body { padding: 20px 22px; }
+
+        /* ── 스텝 리스트 ── */
+        .steps { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+        .step {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+        }
+        .step-num {
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.82rem;
+            font-weight: 800;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .step-content { flex: 1; }
+        .step-content .step-title {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--gray-900);
+            margin-bottom: 4px;
+        }
+        .step-content .step-desc {
+            font-size: 0.85rem;
+            color: var(--gray-500);
+            line-height: 1.55;
+        }
+        .step-content .step-desc strong { color: var(--gray-700); }
+
+        /* 컬러 테마 */
+        .theme-customer .step-num { background: #cffafe; color: #0e7490; }
+        .theme-customer .section-card-head .icon { background: #cffafe; color: #0e7490; }
+        .theme-driver   .step-num { background: #dcfce7; color: #15803d; }
+        .theme-driver   .section-card-head .icon { background: #dcfce7; color: #15803d; }
+        .theme-admin    .step-num { background: #ede9fe; color: #6d28d9; }
+        .theme-admin    .section-card-head .icon { background: #ede9fe; color: #6d28d9; }
+
+        /* ── 팁 박스 ── */
+        .tip-box {
+            border-radius: 10px;
+            padding: 13px 16px;
+            font-size: 0.84rem;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            margin-top: 14px;
+            line-height: 1.55;
+        }
+        .tip-box i { margin-top: 2px; flex-shrink: 0; font-size: 0.95rem; }
+        .tip-info    { background: #eff6ff; color: #1e40af; }
+        .tip-success { background: #f0fdf4; color: #15803d; }
+        .tip-warn    { background: #fffbeb; color: #92400e; }
+        .tip-danger  { background: #fef2f2; color: #991b1b; }
+
+        /* ── 인라인 배지 ── */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 9px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            vertical-align: middle;
+        }
+        .badge-blue   { background: #dbeafe; color: #1e40af; }
+        .badge-cyan   { background: #cffafe; color: #0e7490; }
+        .badge-green  { background: #dcfce7; color: #15803d; }
+        .badge-purple { background: #ede9fe; color: #6d28d9; }
+        .badge-orange { background: #ffedd5; color: #c2410c; }
+        .badge-red    { background: #fee2e2; color: #991b1b; }
+
+        /* ── 상태 플로우 ── */
+        .status-flow {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+        .status-chip {
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+        .status-arrow {
+            color: var(--gray-400);
+            font-size: 0.9rem;
+        }
+
+        /* ── FAQ ── */
+        .faq-item {
+            border: 1.5px solid var(--gray-200);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .faq-q {
+            padding: 14px 18px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            color: var(--gray-900);
+            background: white;
+            transition: background 0.15s;
+            user-select: none;
+        }
+        .faq-q:hover { background: var(--gray-50); }
+        .faq-q .faq-icon { color: var(--gray-400); transition: transform 0.2s; font-size: 0.8rem; }
+        .faq-q.open .faq-icon { transform: rotate(180deg); }
+        .faq-a {
+            display: none;
+            padding: 0 18px 14px;
+            font-size: 0.84rem;
+            color: var(--gray-500);
+            line-height: 1.6;
+            border-top: 1px solid var(--gray-100);
+            background: var(--gray-50);
+        }
+        .faq-a.open { display: block; }
+
+        /* ── 구분선 ── */
+        .divider {
+            height: 1px;
+            background: var(--gray-100);
+            margin: 18px 0;
+        }
+
+        /* ── 요약 카드 행 ── */
+        .summary-row {
+            display: grid;
+            grid-template-columns: repeat(3,1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        @media (max-width: 600px) { .summary-row { grid-template-columns: 1fr; } }
+        .summary-card {
+            border-radius: var(--radius);
+            padding: 18px 16px;
+            text-align: center;
+            color: white;
+        }
+        .summary-card .sc-icon { font-size: 1.8rem; margin-bottom: 8px; }
+        .summary-card .sc-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 4px; }
+        .summary-card .sc-sub { font-size: 0.78rem; opacity: 0.85; }
+        .bg-customer { background: linear-gradient(135deg,#0891b2,#0e7490); }
+        .bg-driver   { background: linear-gradient(135deg,#16a34a,#15803d); }
+        .bg-admin    { background: linear-gradient(135deg,#7c3aed,#6d28d9); }
+
+        /* ── 전체 흐름 타임라인 ── */
+        .timeline { position: relative; padding-left: 28px; }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 9px; top: 6px; bottom: 6px;
+            width: 2px;
+            background: var(--gray-200);
+        }
+        .tl-item {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .tl-dot {
+            position: absolute;
+            left: -23px;
+            top: 4px;
+            width: 18px; height: 18px;
+            border-radius: 50%;
+            border: 2px solid white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.6rem;
+            color: white;
+        }
+        .tl-item .tl-role {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-bottom: 4px;
+        }
+        .tl-item .tl-text {
+            font-size: 0.88rem;
+            color: var(--gray-700);
+            font-weight: 500;
+        }
+        .tl-item .tl-sub {
+            font-size: 0.78rem;
+            color: var(--gray-400);
+            margin-top: 2px;
+        }
+
+        /* 반응형 */
+        @media (max-width: 480px) {
+            .hero h1 { font-size: 1.5rem; }
+            .section-card-body { padding: 16px; }
+            .section-card-head { padding: 14px 16px 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- 헤더 -->
+<header class="guide-header">
+    <div class="inner">
+        <div class="logo">
+            <i class="fas fa-book-open"></i> 사용법 안내
+        </div>
+        <a href="index.html" class="back">
+            <i class="fas fa-arrow-left"></i> 홈으로
+        </a>
+    </div>
+</header>
+
+<!-- 히어로 -->
+<div class="hero">
+    <h1><i class="fas fa-truck"></i> 화물운송 관리 시스템<br>사용법 안내</h1>
+    <p>화주(고객사) · 기사 · 관리자 역할별<br>단계별 사용 방법을 안내합니다</p>
+</div>
+
+<!-- 탭 네비 -->
+<nav class="tab-nav">
+    <div class="tab-inner">
+        <button class="tab-btn active-customer" id="tabBtnOverview" onclick="switchTab('overview','customer')">
+            <i class="fas fa-map"></i> 전체 흐름
+        </button>
+        <button class="tab-btn" id="tabBtnCustomer" onclick="switchTab('customer','customer')">
+            <i class="fas fa-building"></i> 화주 (고객사)
+        </button>
+        <button class="tab-btn" id="tabBtnDriver" onclick="switchTab('driver','driver')">
+            <i class="fas fa-truck"></i> 기사
+        </button>
+        <button class="tab-btn" id="tabBtnAdmin" onclick="switchTab('admin','admin')">
+            <i class="fas fa-shield-alt"></i> 관리자
+        </button>
+        <button class="tab-btn" id="tabBtnFaq" onclick="switchTab('faq','customer')">
+            <i class="fas fa-question-circle"></i> FAQ
+        </button>
+    </div>
+</nav>
+
+<!-- 본문 -->
+<div class="guide-body">
+
+    <!-- ★ 최신 업데이트 공지 -->
+    <div style="background:linear-gradient(135deg,#1e3a8a,#0891b2);color:#fff;border-radius:14px;padding:16px 20px;margin-bottom:20px;box-shadow:0 4px 16px rgba(37,99,235,0.25);">
+        <div style="font-size:0.75rem;font-weight:700;letter-spacing:0.08em;opacity:0.8;margin-bottom:8px;">🆕 최근 업데이트 (2025.03.20)</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            <span style="background:rgba(255,255,255,0.18);border-radius:20px;padding:4px 12px;font-size:0.79rem;font-weight:600;">❄️ 화물 타입 선택 (냉동/냉장·냉동·냉장·상온)</span>
+            <span style="background:rgba(255,255,255,0.18);border-radius:20px;padding:4px 12px;font-size:0.79rem;font-weight:600;">🌡️ 냉동·냉장 시 AB온도 확인 안내</span>
+            <span style="background:rgba(255,255,255,0.18);border-radius:20px;padding:4px 12px;font-size:0.79rem;font-weight:600;">📸 화주→기사 사진 촬영 요청</span>
+            <span style="background:rgba(255,255,255,0.18);border-radius:20px;padding:4px 12px;font-size:0.79rem;font-weight:600;">🔔 실시간 알림 (접속·상차·하차완료)</span>
+            <span style="background:rgba(255,255,255,0.18);border-radius:20px;padding:4px 12px;font-size:0.79rem;font-weight:600;">📷 촬영 버튼 모바일 호환 개선</span>
+        </div>
+    </div>
+
+    <!-- ========================
+         전체 흐름
+         ======================== -->
+    <div class="guide-panel active" id="panelOverview">
+
+        <div class="summary-row">
+            <div class="summary-card bg-customer">
+                <div class="sc-icon"><i class="fas fa-building"></i></div>
+                <div class="sc-title">화주 (고객사)</div>
+                <div class="sc-sub">배송 등록 · 현황 조회<br>서류 사진 확인</div>
+            </div>
+            <div class="summary-card bg-driver">
+                <div class="sc-icon"><i class="fas fa-id-card"></i></div>
+                <div class="sc-title">기사</div>
+                <div class="sc-sub">GPS 공유 · 서류 촬영<br>상·하차 완료 처리</div>
+            </div>
+            <div class="summary-card bg-admin">
+                <div class="sc-icon"><i class="fas fa-shield-alt"></i></div>
+                <div class="sc-title">관리자</div>
+                <div class="sc-sub">고객사 룸 생성<br>전체 배송 현황 관리</div>
+            </div>
+        </div>
+
+        <div class="section-card">
+            <div class="section-card-head">
+                <div class="icon" style="background:#eff6ff;color:#2563eb;">
+                    <i class="fas fa-route"></i>
+                </div>
+                <div>
+                    <h2>배송 1건의 전체 흐름</h2>
+                    <p>관리자 룸 생성 → 화주 배송 등록 → 기사 업무 완료</p>
+                </div>
+            </div>
+            <div class="section-card-body">
+                <div class="timeline">
+
+                    <div class="tl-item">
+                        <div class="tl-dot" style="background:#7c3aed;"><i class="fas fa-crown"></i></div>
+                        <span class="tl-role" style="background:#ede9fe;color:#6d28d9;">관리자</span>
+                        <div class="tl-text">고객사 룸 생성</div>
+                        <div class="tl-sub">룸 이름(회사명)과 비밀번호 설정 후 화주에게 URL·비밀번호 전달</div>
+                    </div>
+
+                    <div class="tl-item">
+                        <div class="tl-dot" style="background:#0891b2;"><i class="fas fa-building"></i></div>
+                        <span class="tl-role" style="background:#cffafe;color:#0e7490;">화주</span>
+                        <div class="tl-text">룸 입장 후 배송 등록</div>
+                        <div class="tl-sub">기사명·차량번호·화물·<strong>화물타입(냉동/냉장·냉동·냉장·상온)</strong>·출발지·목적지·기사 PIN 입력 → 기사에게 PIN 전달</div>
+                    </div>
+
+                    <div class="tl-item">
+                        <div class="tl-dot" style="background:#16a34a;"><i class="fas fa-key"></i></div>
+                        <span class="tl-role" style="background:#dcfce7;color:#15803d;">기사</span>
+                        <div class="tl-text">이름 + PIN 로그인 → 배송건 선택 → 업무 시작</div>
+                        <div class="tl-sub">업무 시작 시 GPS 자동 켜짐 · <strong>관리자·화주에게 접속 알림 자동 전송</strong></div>
+                    </div>
+
+                    <div class="tl-item">
+                        <div class="tl-dot" style="background:#d97706;"><i class="fas fa-arrow-up"></i></div>
+                        <span class="tl-role" style="background:#ffedd5;color:#c2410c;">기사</span>
+                        <div class="tl-text">상차 — 거래명세표·온도기록지 촬영 → 상차 완료</div>
+                        <div class="tl-sub">촬영 즉시 자동 업로드 · 냉동/냉장이면 <strong>AB온도 확인 안내</strong> 표시 · <strong>상차완료 알림 자동 전송</strong></div>
+                    </div>
+
+                    <div class="tl-item">
+                        <div class="tl-dot" style="background:#0891b2;"><i class="fas fa-map-marker-alt"></i></div>
+                        <span class="tl-role" style="background:#cffafe;color:#0e7490;">화주</span>
+                        <div class="tl-text">실시간 GPS 지도에서 기사 위치 확인 · 사진 미업로드 시 촬영 요청 가능</div>
+                        <div class="tl-sub">지도 탭 → 30초 자동 갱신 · 서류 미업로드 항목에 <strong>📸 촬영 요청</strong> 버튼 표시</div>
+                    </div>
+
+                    <div class="tl-item">
+                        <div class="tl-dot" style="background:#16a34a;"><i class="fas fa-arrow-down"></i></div>
+                        <span class="tl-role" style="background:#dcfce7;color:#15803d;">기사</span>
+                        <div class="tl-text">하차 — 거래명세표·온도기록지 촬영 → 하차 완료</div>
+                        <div class="tl-sub">경유지 있으면 하차지 추가 후 각각 처리 → 모두 완료 시 GPS 자동 종료 · <strong>하차완료 알림 자동 전송</strong></div>
+                    </div>
+
+                    <div class="tl-item">
+                        <div class="tl-dot" style="background:#0891b2;"><i class="fas fa-file-image"></i></div>
+                        <span class="tl-role" style="background:#cffafe;color:#0e7490;">화주</span>
+                        <div class="tl-text">서류 탭에서 상·하차 사진 확인 · 미업로드 시 기사에게 촬영 요청</div>
+                        <div class="tl-sub">거래명세표·온도기록지 클릭 시 확대 보기 · 사진 없으면 <strong>📸 촬영 요청</strong> 버튼 클릭 → 기사 앱에 알림 팝업</div>
+                    </div>
+
+                    <div class="tl-item">
+                        <div class="tl-dot" style="background:#7c3aed;"><i class="fas fa-images"></i></div>
+                        <span class="tl-role" style="background:#ede9fe;color:#6d28d9;">관리자</span>
+                        <div class="tl-text">사진 보관함에서 날짜·거래처별 전체 서류 조회</div>
+                        <div class="tl-sub">gallery.html — 기간 검색, 거래처별 분류</div>
+                    </div>
+
+                </div>
+
+                <div class="tip-box tip-info" style="margin-top:0;">
+                    <i class="fas fa-info-circle"></i>
+                    <span>배송 상태 변화: <span class="badge badge-orange">대기중</span> → <span class="badge badge-orange">상차완료</span> → <span class="badge badge-cyan">운송중</span> → <span class="badge badge-green">하차완료</span></span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ========================
+         화주 (고객사)
+         ======================== -->
+    <div class="guide-panel" id="panelCustomer">
+
+        <!-- 접속 방법 -->
+        <div class="section-card theme-customer">
+            <div class="section-card-head">
+                <div class="icon"><i class="fas fa-sign-in-alt"></i></div>
+                <div>
+                    <h2>1단계 · 룸 접속</h2>
+                    <p>관리자에게 받은 URL과 비밀번호로 입장</p>
+                </div>
+            </div>
+            <div class="section-card-body">
+                <ul class="steps">
+                    <li class="step">
+                        <div class="step-num">1</div>
+                        <div class="step-content">
+                            <div class="step-title">URL로 접속</div>
+                            <div class="step-desc">관리자에게 받은 링크를 클릭하거나, 메인 화면 <span class="badge badge-cyan"><i class="fas fa-building"></i> 고객사</span> 카드를 선택 후 회사명을 찾아 클릭합니다.</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">2</div>
+                        <div class="step-content">
+                            <div class="step-title">룸 비밀번호 입력</div>
+                            <div class="step-desc">관리자에게 받은 <strong>룸 비밀번호</strong>를 입력하고 [입장하기]를 클릭합니다.<br>한 번 입장하면 <strong>8시간 동안 자동 유지</strong>됩니다.</div>
+                        </div>
+                    </li>
+                </ul>
+                <div class="tip-box tip-info">
+                    <i class="fas fa-link"></i>
+                    <span>자주 사용한다면 브라우저에 즐겨찾기로 저장해 두세요. URL에 룸 ID가 포함되어 있어 바로 접속됩니다.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 배송 등록 -->
+        <div class="section-card theme-customer">
+            <div class="section-card-head">
+                <div class="icon"><i class="fas fa-plus-circle"></i></div>
+                <div>
+                    <h2>2단계 · 배송 등록</h2>
+                    <p>출발 전 기사 정보와 PIN을 함께 등록</p>
+                </div>
+            </div>
+            <div class="section-card-body">
+                <ul class="steps">
+                    <li class="step">
+                        <div class="step-num">1</div>
+                        <div class="step-content">
+                            <div class="step-title">[+ 배송 등록] 버튼 클릭</div>
+                            <div class="step-desc">배송 목록 우상단의 파란 버튼을 클릭합니다.</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">2</div>
+                        <div class="step-content">
+                            <div class="step-title">기본 정보 입력</div>
+                            <div class="step-desc">
+                                <strong>기사명</strong> · <strong>차량번호</strong> · <strong>화물 품목</strong> · <strong>출발지</strong> · <strong>목적지</strong>를 입력합니다.<br>
+                                <span style="margin-top:6px;display:inline-block;background:#eff6ff;border-radius:8px;padding:4px 10px;font-size:0.82rem;color:#1d4ed8;">
+                                    ❄️ <strong>화물 타입</strong>을 반드시 선택하세요 — 냉동/냉장·냉동·냉장·상온<br>
+                                    냉동·냉장류 선택 시 온도기록지 업로드 후 <strong>AB온도 확인 안내</strong>가 기사 앱에 표시됩니다.
+                                </span>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">3</div>
+                        <div class="step-content">
+                            <div class="step-title">기사 PIN 설정 <span class="badge badge-red">필수</span></div>
+                            <div class="step-desc"><strong>숫자 4~8자리</strong>로 PIN을 정합니다. 이 PIN은 기사가 로그인할 때 사용하므로 <strong>기사에게 문자나 카톡으로 전달</strong>해 주세요.</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">4</div>
+                        <div class="step-content">
+                            <div class="step-title">[등록] 클릭</div>
+                            <div class="step-desc">저장 즉시 배송 목록에 나타납니다. 기사에게 <strong>이름 + PIN</strong>을 알려주세요.</div>
+                        </div>
+                    </li>
+                </ul>
+                <div class="tip-box tip-warn">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>PIN은 저장 후 확인이 불가능합니다. 기사에게 전달 전 메모해 두거나 카톡으로 먼저 보내 주세요.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ★ 실시간 알림 -->
+        <div class="section-card theme-customer">
+            <div class="section-card-head">
+                <div class="icon" style="background:#fef3c7;color:#d97706;"><i class="fas fa-bell"></i></div>
+                <div>
+                    <h2>🔔 실시간 알림</h2>
+                    <p>기사 접속·상차완료·하차완료 시 자동 알림</p>
+                </div>
+            </div>
+            <div class="section-card-body">
+                <ul class="steps">
+                    <li class="step">
+                        <div class="step-num" style="background:#d97706;">🚛</div>
+                        <div class="step-content">
+                            <div class="step-title">기사 앱 접속</div>
+                            <div class="step-desc">기사가 앱에 로그인해 업무를 시작하면 화주 룸 화면 오른쪽 상단 <strong>🔔 벨 아이콘</strong>에 알림이 표시됩니다.</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num" style="background:#d97706;">📦</div>
+                        <div class="step-content">
+                            <div class="step-title">상차완료</div>
+                            <div class="step-desc">기사가 <strong>[상차 완료 처리]</strong> 버튼을 누르면 알림이 발송됩니다. 배송 목록도 자동으로 갱신됩니다.</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num" style="background:#16a34a;">✅</div>
+                        <div class="step-content">
+                            <div class="step-title">하차완료</div>
+                            <div class="step-desc">모든 하차 완료 처리 시 알림이 발송됩니다. 벨 아이콘 클릭 시 알림 목록을 확인할 수 있습니다.</div>
+                        </div>
+                    </li>
+                </ul>
+                <div class="tip-box tip-info">
+                    <i class="fas fa-info-circle"></i>
+                    <span>알림은 <strong>10초 간격</strong>으로 자동 갱신됩니다. 페이지를 열어두면 자동으로 최신 알림을 받습니다.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ★ 사진 촬영 요청 -->
+        <div class="section-card theme-customer">
+            <div class="section-card-head">
+                <div class="icon" style="background:#fce7f3;color:#be185d;"><i class="fas fa-camera"></i></div>
+                <div>
+                    <h2>📸 기사에게 사진 촬영 요청</h2>
+                    <p>서류 미업로드 시 기사 앱으로 직접 요청</p>
+                </div>
+            </div>
+            <div class="section-card-body">
+                <ul class="steps">
+                    <li class="step">
+                        <div class="step-num">1</div>
+                        <div class="step-content">
+                            <div class="step-title">배송 상세 열기</div>
+                            <div class="step-desc">배송 목록에서 해당 배송 카드를 클릭하면 상세 정보가 열립니다.</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">2</div>
+                        <div class="step-content">
+                            <div class="step-title">📸 촬영 요청 버튼 클릭</div>
+                            <div class="step-desc">사진이 업로드되지 않은 항목(거래명세표/온도기록지)에 <strong style="color:#be185d;">📸 촬영 요청</strong> 버튼이 표시됩니다. 클릭하면 기사 앱에 알림 배너가 뜹니다.</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">3</div>
+                        <div class="step-content">
+                            <div class="step-title">기사가 촬영 후 자동 업로드</div>
+                            <div class="step-desc">기사가 촬영하면 즉시 업로드되어 배송 상세에서 바로 확인할 수 있습니다.</div>
+                        </div>
+                    </li>
+                </ul>
+                <div class="tip-box tip-info">
+                    <i class="fas fa-info-circle"></i>
+                    <span>촬영 요청은 배송이 <strong>운송 중</strong>인 상태에서만 가능합니다. 하차완료 배송은 요청할 수 없습니다.</span>
+                </div>
+            </div>
+        </div>
+            </div>
+            <div class="section-card-body">
+
+                <p style="font-size:0.88rem;font-weight:700;color:var(--gray-700);margin-bottom:10px;">
+                    <i class="fas fa-list" style="color:#0891b2;"></i> 배송 탭
+                </p>
+                <ul class="steps">
+                    <li class="step">
+                        <div class="step-num">①</div>
+                        <div class="step-content">
+                            <div class="step-desc">배송 카드를 클릭하면 <strong>상세 정보</strong>(기사·차량·화물·상태·GPS·서류)를 확인할 수 있습니다.</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">②</div>
+                        <div class="step-content">
+                            <div class="step-desc">카드 하단 아이콘으로 서류 업로드 여부를 한눈에 확인: <span class="badge badge-cyan">파란색=업로드됨</span> <span class="badge" style="background:#e2e8f0;color:#64748b;">회색=미업로드</span></div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">③</div>
+                        <div class="step-content">
+                            <div class="step-desc">경유 배송은 <span class="badge badge-cyan">경유N</span> 배지로 몇 곳을 경유하는지 표시됩니다.</div>
+                        </div>
+                    </li>
+                </ul>
+
+                <div class="divider"></div>
+
+                <p style="font-size:0.88rem;font-weight:700;color:var(--gray-700);margin-bottom:10px;">
+                    <i class="fas fa-map" style="color:#16a34a;"></i> 지도 탭
+                </p>
+                <ul class="steps">
+                    <li class="step">
+                        <div class="step-num">①</div>
+                        <div class="step-content">
+                            <div class="step-desc">기사가 GPS를 켜면 <strong>실시간 위치</strong>가 지도에 트럭 아이콘으로 표시됩니다.</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">②</div>
+                        <div class="step-content">
+                            <div class="step-desc"><span class="badge badge-green">초록 아이콘</span> = 5분 이내 최신 위치 / <span class="badge" style="background:#e2e8f0;color:#64748b;">회색 아이콘</span> = 위치 오래됨. <strong>30초마다 자동 갱신</strong>됩니다.</div>
+                        </div>
+                    </li>
+                </ul>
+
+                <div class="divider"></div>
+
+                <p style="font-size:0.88rem;font-weight:700;color:var(--gray-700);margin-bottom:10px;">
+                    <i class="fas fa-file-image" style="color:#d97706;"></i> 서류 탭
+                </p>
+                <ul class="steps">
+                    <li class="step">
+                        <div class="step-num">①</div>
+                        <div class="step-content">
+                            <div class="step-desc">상단 드롭다운에서 <strong>배송건을 선택</strong>하면 해당 건의 모든 서류 사진이 표시됩니다.</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">②</div>
+                        <div class="step-content">
+                            <div class="step-desc">경유 배송은 하차지별로 구분되어 표시됩니다. <strong>사진 클릭 시 확대</strong> 가능합니다.</div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 배송 삭제 -->
+        <div class="section-card theme-customer">
+            <div class="section-card-head">
+                <div class="icon"><i class="fas fa-trash"></i></div>
+                <div>
+                    <h2>배송 삭제</h2>
+                    <p>잘못 등록한 배송 건 삭제 방법</p>
+                </div>
+            </div>
+            <div class="section-card-body">
+                <ul class="steps">
+                    <li class="step">
+                        <div class="step-num">1</div>
+                        <div class="step-content">
+                            <div class="step-desc">배송 카드 클릭 → 상세 모달 하단 <span class="badge badge-red"><i class="fas fa-trash"></i> 삭제</span> 버튼 클릭</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">2</div>
+                        <div class="step-content">
+                            <div class="step-desc">확인 팝업에서 [확인]을 누르면 즉시 삭제됩니다.</div>
+                        </div>
+                    </li>
+                </ul>
+                <div class="tip-box tip-danger">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>삭제된 배송은 복구되지 않습니다. 업로드된 사진도 함께 삭제됩니다.</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ========================
+         기사
+         ======================== -->
+    <div class="guide-panel" id="panelDriver">
+
+        <!-- 로그인 -->
+        <div class="section-card theme-driver">
+            <div class="section-card-head">
+                <div class="icon"><i class="fas fa-key"></i></div>
+                <div>
+                    <h2>1단계 · 로그인</h2>
+                    <p>고객사에서 받은 이름과 PIN으로 접속</p>
+                </div>
+            </div>
+            <div class="section-card-body">
+                <ul class="steps">
+                    <li class="step">
+                        <div class="step-num">1</div>
+                        <div class="step-content">
+                            <div class="step-title">기사 업무 화면 접속</div>
+                            <div class="step-desc">메인 화면에서 <span class="badge badge-green"><i class="fas fa-truck"></i> 기사</span> 카드를 클릭하거나, 관리자·화주에게 받은 QR 코드를 스캔합니다.</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">2</div>
+                        <div class="step-content">
+                            <div class="step-title">이름 + PIN 입력</div>
+                            <div class="step-desc">화주가 배송 등록 시 설정한 <strong>기사 이름</strong>과 <strong>PIN 코드</strong>를 입력합니다. 이름은 공백 없이 정확히 일치해야 합니다.</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">3</div>
+                        <div class="step-content">
+                            <div class="step-title">배송건 선택 → [업무 시작]</div>
+                            <div class="step-desc">내 이름에 등록된 배송 목록이 표시됩니다. 해당 배송건을 선택하고 [업무 시작]을 누르면 <strong>GPS가 자동으로 켜집니다</strong>.</div>
+                        </div>
+                    </li>
+                </ul>
+                <div class="tip-box tip-success">
+                    <i class="fas fa-clock"></i>
+                    <span>로그인 상태는 <strong>12시간 유지</strong>됩니다. 앱을 닫았다 열어도 자동으로 이어집니다.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 상차 -->
+        <div class="section-card theme-driver">
+            <div class="section-card-head">
+                <div class="icon"><i class="fas fa-arrow-up"></i></div>
+                <div>
+                    <h2>2단계 · 상차 완료 처리</h2>
+                    <p>서류 촬영 → 자동 업로드 → 상차 완료</p>
+                </div>
+            </div>
+            <div class="section-card-body">
+                <ul class="steps">
+                    <li class="step">
+                        <div class="step-num">1</div>
+                        <div class="step-content">
+                            <div class="step-title">거래명세표 촬영</div>
+                            <div class="step-desc"><span class="badge badge-cyan"><i class="fas fa-camera"></i> 촬영/선택</span> 버튼을 눌러 카메라로 촬영하거나 갤러리에서 선택합니다. 선택 즉시 <strong>자동으로 업로드</strong>됩니다.</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">2</div>
+                        <div class="step-content">
+                            <div class="step-title">온도기록지 촬영</div>
+                            <div class="step-desc">같은 방법으로 온도기록지도 촬영합니다. 업로드 완료 후 <span class="badge badge-orange"><i class="fas fa-redo"></i> 수정</span> 버튼이 나타납니다.</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">3</div>
+                        <div class="step-content">
+                            <div class="step-title">[상차 완료 처리] 클릭</div>
+                            <div class="step-desc">노란색 버튼을 눌러 상차 완료를 처리합니다. 이때부터 배송 상태가 <span class="badge badge-cyan">운송중</span>으로 변경됩니다.</div>
+                        </div>
+                    </li>
+                </ul>
+                <div class="tip-box tip-warn">
+                    <i class="fas fa-redo"></i>
+                    <span>잘못 촬영했으면 <strong>[수정] 버튼</strong>을 눌러 다시 찍으면 됩니다. 기존 사진을 덮어씁니다.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 하차 (단순) -->
+        <div class="section-card theme-driver">
+            <div class="section-card-head">
+                <div class="icon"><i class="fas fa-arrow-down"></i></div>
+                <div>
+                    <h2>3단계 · 하차 완료 처리</h2>
+                    <p>목적지 도착 후 서류 촬영 및 완료 처리</p>
+                </div>
+            </div>
+            <div class="section-card-body">
+                <ul class="steps">
+                    <li class="step">
+                        <div class="step-num">1</div>
+                        <div class="step-content">
+                            <div class="step-title">하차 1 섹션 확인</div>
+                            <div class="step-desc">상차 섹션 아래에 <strong>하차 1</strong> 섹션이 자동으로 생성되어 있습니다.</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">2</div>
+                        <div class="step-content">
+                            <div class="step-title">거래명세표 · 온도기록지 촬영</div>
+                            <div class="step-desc">상차와 동일하게 촬영 즉시 자동 업로드됩니다.</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">3</div>
+                        <div class="step-content">
+                            <div class="step-title">[하차 1 하차 완료 처리] 클릭</div>
+                            <div class="step-desc">초록색 버튼을 클릭합니다. 모든 하차가 완료되면 배송 상태가 <span class="badge badge-green">하차완료</span>로 변경되고 <strong>GPS가 자동으로 종료</strong>됩니다.</div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 경유 -->
+        <div class="section-card theme-driver">
+            <div class="section-card-head">
+                <div class="icon"><i class="fas fa-code-branch"></i></div>
+                <div>
+                    <h2>경유 하차 처리 (여러 목적지)</h2>
+                    <p>1건의 배송에서 여러 곳에 하차할 때</p>
+                </div>
+            </div>
+            <div class="section-card-body">
+                <ul class="steps">
+                    <li class="step">
+                        <div class="step-num">1</div>
+                        <div class="step-content">
+                            <div class="step-title">[+ 경유 하차지 추가] 클릭</div>
+                            <div class="step-desc">하차 섹션 아래 파란색 점선 버튼을 클릭하면 <strong>하차 2, 하차 3...</strong> 세트가 추가됩니다.</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">2</div>
+                        <div class="step-content">
+                            <div class="step-title">하차지 이름 변경 (선택)</div>
+                            <div class="step-desc">입력란에 <strong>"1차 납품처"</strong>, <strong>"ABC마트"</strong> 등 구체적인 이름으로 변경할 수 있습니다.</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">3</div>
+                        <div class="step-content">
+                            <div class="step-title">각 하차지별 서류 촬영 → 하차 완료</div>
+                            <div class="step-desc">각 하차지에 도착할 때마다 사진 촬영 후 [하차 완료 처리]를 클릭합니다. <strong>모든 하차지 완료 시</strong> GPS 자동 종료.</div>
+                        </div>
+                    </li>
+                </ul>
+                <div class="tip-box tip-info">
+                    <i class="fas fa-trash"></i>
+                    <span>잘못 추가한 경유지는 우측 상단 <strong>[X 삭제]</strong> 버튼으로 제거할 수 있습니다.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- GPS -->
+        <div class="section-card theme-driver">
+            <div class="section-card-head">
+                <div class="icon"><i class="fas fa-location-arrow"></i></div>
+                <div>
+                    <h2>GPS 위치 공유</h2>
+                    <p>화주가 실시간으로 위치를 확인합니다</p>
+                </div>
+            </div>
+            <div class="section-card-body">
+                <ul class="steps">
+                    <li class="step">
+                        <div class="step-num">✓</div>
+                        <div class="step-content">
+                            <div class="step-title">업무 시작 시 자동 켜짐</div>
+                            <div class="step-desc">[업무 시작] 클릭 시 GPS가 자동으로 활성화됩니다. 브라우저 위치 권한을 <strong>허용</strong>해 주세요.</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">✓</div>
+                        <div class="step-content">
+                            <div class="step-title">하차 완료 전 GPS 유지</div>
+                            <div class="step-desc">모든 하차지 완료 전까지는 GPS를 끌 수 없습니다. 신호가 끊기면 <strong>5초 후 자동 재연결</strong>됩니다.</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">✓</div>
+                        <div class="step-content">
+                            <div class="step-title">하차 완료 시 자동 종료</div>
+                            <div class="step-desc">모든 하차지 완료 처리 후 GPS가 자동으로 꺼집니다.</div>
+                        </div>
+                    </li>
+                </ul>
+                <div class="tip-box tip-warn">
+                    <i class="fas fa-mobile-alt"></i>
+                    <span><strong>네비게이션 사용 시</strong>: 상차완료 버튼을 누르면 앱이 자동으로 백그라운드로 전환됩니다. 네비 앱을 켜고 출발하면 됩니다.</span>
+                </div>
+                <div class="tip-box tip-info" style="margin-top:8px;">
+                    <i class="fas fa-android"></i>
+                    <span><strong>Android APK 설치 시</strong>: 백그라운드 GPS가 완전히 유지됩니다. 위치 권한을 <strong>"항상 허용"</strong>으로 설정하세요. 배터리 최적화도 <strong>"제한 없음"</strong>으로 설정하면 더 안정적입니다.</span>
+                </div>
+                <div class="tip-box tip-success" style="margin-top:8px;">
+                    <i class="fas fa-redo"></i>
+                    <span><strong>재접속 자동 복원</strong>: 앱이 꺼졌어도 12시간 이내 재접속하면 이전 업무와 GPS가 자동으로 복원됩니다.</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ========================
+         관리자
+         ======================== -->
+    <div class="guide-panel" id="panelAdmin">
+
+        <!-- 로그인 -->
+        <div class="section-card theme-admin">
+            <div class="section-card-head">
+                <div class="icon"><i class="fas fa-shield-alt"></i></div>
+                <div>
+                    <h2>관리자 로그인</h2>
+                    <p>admin.html — 관리자 전용</p>
+                </div>
+            </div>
+            <div class="section-card-body">
+                <ul class="steps">
+                    <li class="step">
+                        <div class="step-num">1</div>
+                        <div class="step-content">
+                            <div class="step-desc">메인 화면 <span class="badge badge-purple"><i class="fas fa-shield-alt"></i> 관리자</span> 카드 클릭 → 비밀번호 입력</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">2</div>
+                        <div class="step-content">
+                            <div class="step-desc">로그인 후 <strong>4시간 동안</strong> 세션이 유지됩니다.</div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 룸 관리 -->
+        <div class="section-card theme-admin">
+            <div class="section-card-head">
+                <div class="icon"><i class="fas fa-building"></i></div>
+                <div>
+                    <h2>고객사 룸 관리</h2>
+                    <p>화주별 룸 생성·수정·삭제</p>
+                </div>
+            </div>
+            <div class="section-card-body">
+                <ul class="steps">
+                    <li class="step">
+                        <div class="step-num">1</div>
+                        <div class="step-content">
+                            <div class="step-title">룸 생성</div>
+                            <div class="step-desc">[+ 룸 추가] 클릭 → <strong>룸 이름</strong>(회사명)·<strong>비밀번호</strong>·설명·연락처 입력 → [저장]</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">2</div>
+                        <div class="step-content">
+                            <div class="step-title">화주에게 전달</div>
+                            <div class="step-desc">생성된 룸의 <strong>URL</strong>과 <strong>비밀번호</strong>를 화주 담당자에게 전달합니다. QR 페이지에서 QR 코드로 공유할 수도 있습니다.</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">3</div>
+                        <div class="step-content">
+                            <div class="step-title">수정 · 삭제</div>
+                            <div class="step-desc">룸 목록에서 <span class="badge badge-blue"><i class="fas fa-edit"></i> 수정</span> 또는 <span class="badge badge-red"><i class="fas fa-trash"></i> 삭제</span> 버튼으로 관리합니다.</div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 전체 배송 현황 -->
+        <div class="section-card theme-admin">
+            <div class="section-card-head">
+                <div class="icon"><i class="fas fa-truck-loading"></i></div>
+                <div>
+                    <h2>전체 배송 현황</h2>
+                    <p>모든 고객사의 배송을 한 화면에서 조회</p>
+                </div>
+            </div>
+            <div class="section-card-body">
+                <ul class="steps">
+                    <li class="step">
+                        <div class="step-num">①</div>
+                        <div class="step-content">
+                            <div class="step-desc"><strong>전체 배송 현황</strong> 탭에서 모든 배송의 상태·서류 업로드 여부를 확인합니다.</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">②</div>
+                        <div class="step-content">
+                            <div class="step-desc">배송 상태를 직접 변경하거나 필요시 <span class="badge badge-red">삭제</span>할 수 있습니다.</div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 사진 보관함 -->
+        <div class="section-card theme-admin">
+            <div class="section-card-head">
+                <div class="icon"><i class="fas fa-images"></i></div>
+                <div>
+                    <h2>사진 보관함</h2>
+                    <p>날짜·거래처별 서류 사진 통합 조회</p>
+                </div>
+            </div>
+            <div class="section-card-body">
+                <ul class="steps">
+                    <li class="step">
+                        <div class="step-num">1</div>
+                        <div class="step-content">
+                            <div class="step-title">접속 방법</div>
+                            <div class="step-desc">관리자 헤더 <span class="badge badge-blue"><i class="fas fa-images"></i> 사진 보관함</span> 클릭 또는 메인 화면 하단 카드 클릭</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">2</div>
+                        <div class="step-content">
+                            <div class="step-title">필터 활용</div>
+                            <div class="step-desc"><strong>거래처</strong>·<strong>날짜 범위</strong>·<strong>기사명</strong>·<strong>서류 유형</strong>으로 검색 가능합니다.</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">3</div>
+                        <div class="step-content">
+                            <div class="step-title">보기 방식 선택</div>
+                            <div class="step-desc"><span class="badge badge-blue">날짜별</span> · <span class="badge badge-cyan">거래처별</span> · <span class="badge badge-purple">전체 그리드</span> 세 가지 뷰를 제공합니다.</div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 기사 앱 배포 가이드 -->
+        <div class="section-card theme-admin">
+            <div class="section-card-head">
+                <div class="icon"><i class="fas fa-rocket"></i></div>
+                <div>
+                    <h2>🚀 기사 앱 배포 & 업데이트</h2>
+                    <p>Android APK 빌드 · GPS 주기 변경 · 재배포 절차</p>
+                </div>
+            </div>
+            <div class="section-card-body">
+                <ul class="steps">
+                    <li class="step">
+                        <div class="step-num">1</div>
+                        <div class="step-content">
+                            <div class="step-title">웹(HTML) 변경 → Genspark 재배포만</div>
+                            <div class="step-desc">driver.html·CSS 등 웹 파일 변경 시 Genspark <strong>Publish 탭</strong>에서 재배포하면 됩니다. 기사님 APK 재설치 불필요.</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">2</div>
+                        <div class="step-content">
+                            <div class="step-title">Java 코드 변경 → GitHub push → APK 재빌드</div>
+                            <div class="step-desc">GpsService.java(GPS 주기·알림 문구)·AndroidManifest.xml 변경 시 GitHub에 push하면 Actions가 자동 빌드합니다. APK 다운로드 후 기사님께 전송.</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">3</div>
+                        <div class="step-content">
+                            <div class="step-title">자세한 단계별 가이드</div>
+                            <div class="step-desc">
+                                <a href="deploy-guide.html" style="display:inline-flex;align-items:center;gap:6px;background:#6366f1;color:#fff;padding:7px 14px;border-radius:8px;text-decoration:none;font-size:0.85rem;font-weight:600;margin-top:6px;">
+                                    <i class="fas fa-rocket"></i> 배포 가이드 열기
+                                </a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- UVIS 서버 이미지 설정 -->
+        <div class="section-card theme-admin">
+            <div class="section-card-head">
+                <div class="icon"><i class="fas fa-server"></i></div>
+                <div>
+                    <h2>📷 이미지 서버 설정 (중요)</h2>
+                    <p>500 에러 방지 — UVIS 서버 계정 등록 필수</p>
+                </div>
+            </div>
+            <div class="section-card-body">
+                <div class="tip-box tip-danger" style="margin-bottom:16px;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>기사님 사진이 DB에 누적되면 <strong>500 Internal Server Error</strong>가 발생합니다. 반드시 아래 설정을 완료하세요.</span>
+                </div>
+                <ul class="steps">
+                    <li class="step">
+                        <div class="step-num">1</div>
+                        <div class="step-content">
+                            <div class="step-title">설정 탭 이동</div>
+                            <div class="step-desc">admin.html 로그인 후 <span class="badge badge-purple"><i class="fas fa-cog"></i> 설정</span> 탭 클릭</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">2</div>
+                        <div class="step-content">
+                            <div class="step-title">UVIS 계정 입력 및 저장</div>
+                            <div class="step-desc"><strong>UVIS 아이디</strong>와 <strong>비밀번호</strong>를 입력하고 <span class="badge badge-purple">계정 저장</span> 클릭</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">3</div>
+                        <div class="step-content">
+                            <div class="step-title">연결 테스트</div>
+                            <div class="step-desc"><span class="badge badge-blue"><i class="fas fa-vial"></i> 연결 테스트</span> 클릭 → ✅ 성공 확인</div>
+                        </div>
+                    </li>
+                    <li class="step">
+                        <div class="step-num">4</div>
+                        <div class="step-content">
+                            <div class="step-title">기사용 링크 생성 및 전달</div>
+                            <div class="step-desc"><span class="badge badge-green"><i class="fas fa-link"></i> 기사용 링크 생성</span> → 복사 → 카카오톡으로 기사님께 전송.<br>기사님이 해당 링크로 접속하면 <strong>자동 설정 완료</strong>.</div>
+                        </div>
+                    </li>
+                </ul>
+                <div class="tip-box tip-success">
+                    <i class="fas fa-check-circle"></i>
+                    <span>설정 완료 후 기사님 사진은 <strong>rhkdtls.cloud MinIO</strong>(cargo-images 폴더)에 저장되고, DB에는 URL만 저장됩니다. 500 에러가 완전히 해결됩니다.</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ========================
+         FAQ
+         ======================== -->
+    <div class="guide-panel" id="panelFaq">
+
+        <div class="section-card">
+            <div class="section-card-head">
+                <div class="icon" style="background:#fef9c3;color:#854d0e;">
+                    <i class="fas fa-question-circle"></i>
+                </div>
+                <div>
+                    <h2>자주 묻는 질문</h2>
+                    <p>사용 중 불편하신 점을 먼저 확인해 보세요</p>
+                </div>
+            </div>
+            <div class="section-card-body" style="padding-top:8px;">
+
+                <div class="faq-item">
+                    <div class="faq-q" onclick="toggleFaq(this)">
+                        <span>🔑 PIN을 잊어버렸어요 / PIN이 틀렸다고 나와요</span>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </div>
+                    <div class="faq-a">
+                        PIN은 한 번 저장되면 관리자도 확인할 수 없습니다. 화주(고객사) 담당자에게 연락해서 <strong>배송을 삭제하고 새로 등록(새 PIN 설정)</strong>해 달라고 요청하세요.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-q" onclick="toggleFaq(this)">
+                        <span>🚛 배송건이 목록에 안 보여요</span>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </div>
+                    <div class="faq-a">
+                        <strong>① 이름 확인</strong>: 화주가 등록한 기사 이름과 정확히 일치해야 합니다. 공백, 오탈자를 확인하세요.<br>
+                        <strong>② 이미 완료됨</strong>: 하차완료 처리된 배송은 기본적으로 목록 맨 아래에 ✅ 표시와 함께 보입니다.<br>
+                        <strong>③ PIN 불일치</strong>: PIN이 맞지 않으면 해당 배송이 조회되지 않습니다.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-q" onclick="toggleFaq(this)">
+                        <span>📸 사진이 업로드가 안 돼요</span>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </div>
+                    <div class="faq-a">
+                        <strong>① 네트워크 확인</strong>: 인터넷이 연결되어 있는지 확인하세요.<br>
+                        <strong>② 카메라 권한</strong>: 브라우저에서 카메라 접근이 허용되어 있는지 확인하세요.<br>
+                        <strong>③ 재시도</strong>: 업로드 실패 시 토스트 메시지가 나타납니다. [수정] 버튼을 눌러 다시 촬영하면 됩니다.<br>
+                        <strong>④ 파일 크기</strong>: 이미지는 자동으로 1024px 이하로 압축됩니다.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-q" onclick="toggleFaq(this)">
+                        <span>📍 GPS가 작동하지 않아요</span>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </div>
+                    <div class="faq-a">
+                        <strong>① 위치 권한</strong>: 브라우저에서 위치 접근 권한을 <strong>허용</strong>으로 설정해야 합니다. (iOS: 설정 → Safari → 위치, Android: 크롬 설정 → 사이트 설정 → 위치)<br>
+                        <strong>② 실내 환경</strong>: 실내에서는 GPS 신호가 약합니다. 신호 약함 시 5초 후 자동 재시도합니다.<br>
+                        <strong>③ 헤더 표시</strong>: 화면 상단에 <span class="badge badge-green">GPS 켜짐</span> 표시가 있어야 정상입니다.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-q" onclick="toggleFaq(this)">
+                        <span>🗺️ 지도에 기사 위치가 안 보여요</span>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </div>
+                    <div class="faq-a">
+                        <strong>① GPS 미활성</strong>: 기사가 GPS를 켜지 않았거나 권한이 거부된 경우입니다.<br>
+                        <strong>② 배송 상태</strong>: 운송중(transit) 또는 상차완료(loading) 상태일 때만 지도에 표시됩니다.<br>
+                        <strong>③ 갱신 주기</strong>: 30초마다 위치가 서버에 전송됩니다. 자동 갱신 토글을 켜두면 30초마다 지도가 새로고침됩니다.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-q" onclick="toggleFaq(this)">
+                        <span>🏢 고객사 룸 비밀번호를 바꾸고 싶어요</span>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </div>
+                    <div class="faq-a">
+                        관리자 페이지(admin.html) → 고객사 관리 탭 → 해당 룸의 [수정] 버튼 클릭 → 새 비밀번호 입력 후 저장하면 됩니다. 변경 후 화주에게 새 비밀번호를 전달하세요.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-q" onclick="toggleFaq(this)">
+                        <span>🔄 화면이 바뀌지 않거나 오래된 화면이 보여요</span>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </div>
+                    <div class="faq-a">
+                        브라우저 캐시 문제입니다. <strong>강제 새로고침</strong>을 해주세요.<br>
+                        • PC: <strong>Ctrl + Shift + R</strong> (Windows) / <strong>Cmd + Shift + R</strong> (Mac)<br>
+                        • 모바일: 브라우저 설정 → 캐시 삭제 후 재접속
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-q" onclick="toggleFaq(this)">
+                        <span>📂 서류 사진을 다운로드하고 싶어요</span>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </div>
+                    <div class="faq-a">
+                        사진 보관함(gallery.html) 또는 서류 탭에서 사진을 <strong>꾹 눌러서(모바일)</strong> 또는 <strong>우클릭(PC) → 이미지 저장</strong>으로 개별 다운로드할 수 있습니다.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-q" onclick="toggleFaq(this)">
+                        <span>🔴 500 에러가 발생해요 (데이터를 불러오지 못함)</span>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </div>
+                    <div class="faq-a">
+                        기사님 사진이 DB에 직접 저장되어 서버 메모리를 초과한 상태입니다.<br><br>
+                        <strong>해결 방법:</strong><br>
+                        ① 관리자(admin.html) → <strong>설정 탭</strong> 이동<br>
+                        ② UVIS 아이디·비밀번호 입력 → <strong>계정 저장</strong><br>
+                        ③ <strong>연결 테스트</strong> 클릭 → ✅ 성공 확인<br>
+                        ④ <strong>기사용 링크 생성</strong> → 카카오톡으로 기사님께 전송<br>
+                        ⑤ 기사님이 해당 링크로 접속하면 설정 완료<br><br>
+                        이후 신규 사진은 rhkdtls.cloud MinIO에 저장되어 500 에러가 사라집니다.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-q" onclick="toggleFaq(this)">
+                        <span>📱 기사님이 네비게이션 쓸 때 GPS가 끊겨요</span>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </div>
+                    <div class="faq-a">
+                        <strong>상차완료 버튼</strong>을 누르면 앱이 자동으로 백그라운드로 전환됩니다.<br><br>
+                        추가 설정:<br>
+                        ① 위치 권한: <strong>"항상 허용"</strong>으로 설정 (한 번 허용 X)<br>
+                        ② 배터리 최적화: 설정 → 앱 → 화물운송기사 → <strong>"제한 없음"</strong><br>
+                        ③ Android APK를 설치하면 백그라운드 GPS가 완전히 유지됩니다.<br>
+                        ④ 앱이 꺼졌어도 12시간 이내 재접속하면 자동 복원됩니다.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+</div><!-- /guide-body -->
+
+<script>
+    // 탭 전환
+    const tabMap = {
+        overview: 'tabBtnOverview',
+        customer: 'tabBtnCustomer',
+        driver:   'tabBtnDriver',
+        admin:    'tabBtnAdmin',
+        faq:      'tabBtnFaq'
+    };
+    const panelMap = {
+        overview: 'panelOverview',
+        customer: 'panelCustomer',
+        driver:   'panelDriver',
+        admin:    'panelAdmin',
+        faq:      'panelFaq'
+    };
+
+    function switchTab(tab, theme) {
+        // 패널
+        Object.values(panelMap).forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('active');
+        });
+        const panel = document.getElementById(panelMap[tab]);
+        if (panel) panel.classList.add('active');
+
+        // 탭 버튼
+        Object.values(tabMap).forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.className = 'tab-btn';
+        });
+        const btn = document.getElementById(tabMap[tab]);
+        if (btn) btn.classList.add(`active-${theme}`);
+
+        // 스크롤 상단
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // FAQ 토글
+    function toggleFaq(qEl) {
+        const aEl = qEl.nextElementSibling;
+        const isOpen = aEl.classList.contains('open');
+        // 전체 닫기
+        document.querySelectorAll('.faq-a').forEach(el => el.classList.remove('open'));
+        document.querySelectorAll('.faq-q').forEach(el => el.classList.remove('open'));
+        if (!isOpen) {
+            aEl.classList.add('open');
+            qEl.classList.add('open');
+        }
+    }
+</script>
+</body>
+</html>
