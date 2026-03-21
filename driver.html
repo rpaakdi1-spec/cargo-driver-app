@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css?v=20250314J">
-    <link rel="stylesheet" href="css/driver.css?v=20250321B">
+    <link rel="stylesheet" href="css/driver.css?v=20250321H">
     <style>
         @keyframes fadeInDown {
             from { transform: translateY(-100%); opacity: 0; }
@@ -276,6 +276,29 @@
 
     <div class="toast" id="toast"></div>
 
+    <!-- ★ 커스텀 확인 모달 (Android WebView confirm() 대체) -->
+    <div id="confirmModal" style="display:none;position:fixed;inset:0;z-index:99999;
+         background:rgba(0,0,0,0.55);align-items:center;justify-content:center;">
+        <div style="background:#fff;border-radius:16px;padding:24px 20px 18px;
+                    max-width:320px;width:90%;margin:auto;box-shadow:0 8px 32px rgba(0,0,0,0.25);
+                    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
+            <p id="confirmModalMsg" style="font-size:1rem;color:#1e293b;margin:0 0 20px;
+               text-align:center;line-height:1.6;word-break:keep-all;white-space:pre-line;"></p>
+            <div style="display:flex;gap:10px;">
+                <button id="confirmModalCancel"
+                    style="flex:1;padding:12px;border-radius:10px;border:1.5px solid #cbd5e1;
+                           background:#f8fafc;color:#64748b;font-size:0.95rem;font-weight:600;cursor:pointer;">
+                    취소
+                </button>
+                <button id="confirmModalOk"
+                    style="flex:1;padding:12px;border-radius:10px;border:none;
+                           background:#0891b2;color:#fff;font-size:0.95rem;font-weight:700;cursor:pointer;">
+                    확인
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- ★ 라이트박스 (추가사진 확대보기) -->
     <div class="lightbox" id="lightbox" onclick="closeLightbox()"
          style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.9);
@@ -293,7 +316,7 @@
            style="color:#e2e8f0;margin-top:12px;font-size:0.85rem;text-align:center;padding:0 16px;"></p>
     </div>
 
-    <script src="js/utils.js?v=20250321B"></script>
-    <script src="js/driver.js?v=20250321B"></script>
+    <script src="js/utils.js?v=20250321T"></script>
+    <script src="js/driver.js?v=20250321T"></script>
 </body>
 </html>

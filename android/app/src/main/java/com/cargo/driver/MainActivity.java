@@ -130,20 +130,28 @@ public class MainActivity extends AppCompatActivity {
             result -> {
                 if (filePathCallback == null) return;
                 Uri[] results = null;
-                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                    String dataStr = result.getData().getDataString();
-                    if (dataStr != null) {
-                        results = new Uri[]{Uri.parse(dataStr)};
-                    } else if (result.getData().getClipData() != null) {
-                        int count = result.getData().getClipData().getItemCount();
-                        results = new Uri[count];
-                        for (int i = 0; i < count; i++) {
-                            results[i] = result.getData().getClipData().getItemAt(i).getUri();
+                if (result.getResultCode() == RESULT_OK) {
+                    if (result.getData() != null) {
+                        // 갤러리 선택 결과
+                        String dataStr = result.getData().getDataString();
+                        if (dataStr != null) {
+                            results = new Uri[]{Uri.parse(dataStr)};
+                        } else if (result.getData().getClipData() != null) {
+                            int count = result.getData().getClipData().getItemCount();
+                            results = new Uri[count];
+                            for (int i = 0; i < count; i++) {
+                                results[i] = result.getData().getClipData().getItemAt(i).getUri();
+                            }
                         }
+                    }
+                    // ★ 카메라 촬영 시 getData()가 null — EXTRA_OUTPUT으로 저장된 URI 사용
+                    if ((results == null || results.length == 0) && cameraImageUri != null) {
+                        results = new Uri[]{cameraImageUri};
                     }
                 }
                 filePathCallback.onReceiveValue(results);
                 filePathCallback = null;
+                cameraImageUri = null;
             }
         );
 

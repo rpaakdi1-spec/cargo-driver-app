@@ -1,5 +1,6 @@
 /* ===========================
    룸 페이지 JS - room.js
+   v20250321T
 =========================== */
 
 let roomId = null;
@@ -133,9 +134,12 @@ async function handleGatePassword() {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 확인 중...';
 
     try {
-        const hash = await hashPassword(pw);
-        const fallbackHash = _fallbackHash(pw + '_cargo_salt_2025'); // ★ WebView/HTTP 환경 폴백 해시 추가
-        if (hash === roomData.password_hash || fallbackHash === roomData.password_hash) {
+        const hash         = await hashPassword(pw);
+        const fallbackHash = _fallbackHash(pw + '_cargo_salt_2025');
+        const match = hash === roomData.password_hash
+                   || fallbackHash === roomData.password_hash
+                   || (roomData.password_hash2 && (hash === roomData.password_hash2 || fallbackHash === roomData.password_hash2));
+        if (match) {
             Session.set(`room_auth_${roomId}`, {
                 authenticated: true,
                 roomId: roomId,
@@ -207,8 +211,8 @@ function renderDeliveries() {
     }
 
     list.innerHTML = filtered.map(d => {
-        const hasLoadInv = !!d.loading_invoice_photo;
-        const hasLoadTemp = !!d.loading_temp_photo;
+        const hasLoadInv  = !!(d.loading_invoice_ts  || d.loading_invoice_photo);
+        const hasLoadTemp = !!(d.loading_temp_ts     || d.loading_temp_photo);
 
         // stops 배열에서 하차 서류 여부 확인
         let stopsArr = [];
@@ -366,10 +370,18 @@ async function handleAddDelivery(e) {
 
 // ===== 배송 상세 =====
 async function showDeliveryDetail(deliveryId) {
-    const d = deliveries.find(x => x.id === deliveryId);
-    if (!d) return;
-
+    // ★ 이미지 필드 포함 전체 데이터를 단건 apiGet으로 조회 (목록 캐시는 이미지 제외됨)
     const content = document.getElementById('deliveryDetailContent');
+    content.innerHTML = '<div style="text-align:center;padding:32px;"><i class="fas fa-spinner fa-spin" style="font-size:1.5rem;color:#6366f1;"></i><p style="margin-top:8px;color:#64748b;">불러오는 중...</p></div>';
+    openModal('deliveryDetailModal');
+
+    let d;
+    try {
+        d = await apiGet(`tables/deliveries/${deliveryId}`);
+    } catch {
+        content.innerHTML = '<p style="color:#ef4444;text-align:center;padding:24px;">데이터를 불러오지 못했습니다.</p>';
+        return;
+    }
 
     const docSection = (label, photoData, icon, typeClass, dateKey, tsVal, deliveryId, reqType) => {
         const dateBadge = dateKey
@@ -461,18 +473,20 @@ async function showDeliveryDetail(deliveryId) {
             ${(() => {
                 let extras = [];
                 try { extras = d.loading_extra_photos ? JSON.parse(d.loading_extra_photos) : []; } catch {}
-                if (!extras.length) return '';
-                return `<div style="margin-top:10px;">
+                // 항상 추가사진 영역을 표시 (0장이라도 표시)
+                return `<div style="margin-top:12px;border-top:1px solid #f1f5f9;padding-top:10px;">
                     <p style="font-size:0.78rem;font-weight:600;color:#6366f1;margin-bottom:6px;">
-                        <i class="fas fa-images"></i> 추가 사진 (${extras.length}장)
+                        <i class="fas fa-images"></i> 상차 추가사진 ${extras.length > 0 ? `(${extras.length}장)` : '<span style="color:#94a3b8;font-weight:400;">(0장)</span>'}
                     </p>
+                    ${extras.length > 0 ? `
                     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
                         ${extras.map((p, i) => `
                             <div style="aspect-ratio:1;border-radius:8px;overflow:hidden;background:#f1f5f9;cursor:pointer;"
                                 onclick="openLightbox('${p.url}','상차 추가사진 ${i+1}')">
-                                <img src="${p.url}" alt="추가사진 ${i+1}" style="width:100%;height:100%;object-fit:cover;">
+                                <img src="${p.url}" alt="추가사진 ${i+1}" style="width:100%;height:100%;object-fit:cover;" loading="lazy"
+                                    onerror="this.style.display='none';this.parentElement.innerHTML='<div style=\"display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:0.7rem;\"><i class=\"fas fa-image-slash\"></i></div>'">
                             </div>`).join('')}
-                    </div>
+                    </div>` : '<p style="font-size:0.75rem;color:#94a3b8;margin:0;">기사가 업로드한 추가사진이 나타납니다.</p>'}
                 </div>`;
             })()}
         </div>
@@ -481,6 +495,19 @@ async function showDeliveryDetail(deliveryId) {
             // stops 배열(다중 하차) 지원
             let stopsArr = [];
             try { stopsArr = d.stops ? JSON.parse(d.stops) : []; } catch {}
+
+            // ★ stop_photos 필드에서 이미지를 stops 배열에 주입 (v20250321E)
+            let stopPhotos = {};
+            if (d.stop_photos) {
+                try { stopPhotos = JSON.parse(d.stop_photos); } catch { stopPhotos = {}; }
+            }
+            stopsArr.forEach((s, i) => {
+                const p = stopPhotos[String(i)];
+                if (!p) return;
+                if (p.invoice_photo !== undefined) s.invoice_photo = p.invoice_photo;
+                if (p.temp_photo    !== undefined) s.temp_photo    = p.temp_photo;
+                if (p.extra_photos  !== undefined) s.extra_photos  = p.extra_photos;
+            });
 
             if (stopsArr.length > 0) {
                 return stopsArr.map((stop, idx) => `
@@ -496,18 +523,20 @@ async function showDeliveryDetail(deliveryId) {
                         </div>
                         ${(() => {
                             const extras = (stop.extra_photos && stop.extra_photos.length) ? stop.extra_photos : [];
-                            if (!extras.length) return '';
-                            return `<div style="margin-top:8px;">
+                            // 항상 추가사진 영역 표시
+                            return `<div style="margin-top:10px;border-top:1px solid #f1f5f9;padding-top:8px;">
                                 <p style="font-size:0.78rem;font-weight:600;color:#6366f1;margin-bottom:5px;">
-                                    <i class="fas fa-images"></i> 추가 사진 (${extras.length}장)
+                                    <i class="fas fa-images"></i> 하차 추가사진 ${extras.length > 0 ? `(${extras.length}장)` : '<span style="color:#94a3b8;font-weight:400;">(0장)</span>'}
                                 </p>
+                                ${extras.length > 0 ? `
                                 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;">
                                     ${extras.map((p, pi) => `
                                         <div style="aspect-ratio:1;border-radius:7px;overflow:hidden;background:#f1f5f9;cursor:pointer;"
                                             onclick="openLightbox('${p.url}','${escapeHtml(stop.label||'하차'+(idx+1))} 추가사진 ${pi+1}')">
-                                            <img src="${p.url}" alt="추가사진" style="width:100%;height:100%;object-fit:cover;">
+                                            <img src="${p.url}" alt="추가사진" style="width:100%;height:100%;object-fit:cover;" loading="lazy"
+                                                onerror="this.style.display='none';this.parentElement.innerHTML='<div style=\"display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:0.7rem;\"><i class=\"fas fa-image-slash\"></i></div>'">
                                         </div>`).join('')}
-                                </div>
+                                </div>` : '<p style="font-size:0.75rem;color:#94a3b8;margin:0;">기사가 업로드한 추가사진이 나타납니다.</p>'}
                             </div>`;
                         })()}
                     </div>
@@ -535,8 +564,7 @@ async function showDeliveryDetail(deliveryId) {
             </button>
         </div>
     `;
-
-    openModal('deliveryDetailModal');
+    // 모달은 이미 열려있으므로 재호출 불필요
 }
 
 // ===== 배송 삭제 =====

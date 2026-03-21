@@ -166,8 +166,12 @@ async function handlePasswordConfirm() {
             showError('passwordError', '룸 정보를 불러올 수 없습니다.');
             return;
         }
-        const hash = await hashPassword(pw);
-        if (hash === room.password_hash) {
+        const hash         = await hashPassword(pw);
+        const fallbackHash = _fallbackHash(pw + '_cargo_salt_2025');
+        const match = hash === room.password_hash
+                   || fallbackHash === room.password_hash
+                   || (room.password_hash2 && (hash === room.password_hash2 || fallbackHash === room.password_hash2));
+        if (match) {
             Session.set(`room_auth_${pendingRoomId}`, {
                 authenticated: true,
                 roomId: pendingRoomId,

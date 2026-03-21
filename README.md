@@ -1,6 +1,6 @@
 # 화물운송 관리 시스템 — 사용방법 완전 가이드
 
-> **버전**: v20250320V | **최종 수정**: 2025-03-21
+> **버전**: v20250321T | **최종 수정**: 2025-03-21
 
 ---
 
@@ -313,7 +313,10 @@ gallery.html 으로          │
 | loading_temp_date | text | 상차 온도기록지 촬영일 |
 | loading_invoice_ts | datetime | 상차 거래명세표 타임스탬프 |
 | loading_temp_ts | datetime | 상차 온도기록지 타임스탬프 |
-| stops | array | 하차지 배열 JSON (label·사진·arrived_at·delivered_at·extra_photos) |
+| stops | array | 하차지 배열 JSON (label·arrived_at·delivered_at 등 메타데이터만 — 사진은 별도 필드) |
+| stop_N_invoice_photo | text | 하차 N번 거래명세표 URL/Base64 (N=0,1,2...) |
+| stop_N_temp_photo | text | 하차 N번 온도기록지 URL/Base64 (N=0,1,2...) |
+| stop_N_extra_photos | text | 하차 N번 추가사진 JSON 배열 (N=0,1,2...) |
 | current_lat | number | 현재 위도 |
 | current_lng | number | 현재 경도 |
 | current_speed | number | 현재 속도 (km/h) |
@@ -328,18 +331,15 @@ gallery.html 으로          │
 ```json
 {
   "label": "하차 1",
-  "invoice_photo": "https://...",
-  "temp_photo": "https://...",
   "invoice_date": "2025-03-20",
   "temp_date": "2025-03-20",
   "invoice_ts": 1742400000000,
   "temp_ts": 1742400000000,
   "arrived_at": 1742400000000,
-  "delivered_at": 1742400000000,
-  "extra_photos": [
-    { "url": "https://...", "caption": "", "ts": 1742400000000 }
-  ]
+  "delivered_at": 1742400000000
 }
+// ★ v20250321D 이후: 이미지는 DB 별도 필드에 저장 (stop_0_invoice_photo 등)
+// 메모리(in-memory stops 배열)에는 invoice_photo, temp_photo, extra_photos 포함됨
 ```
 
 ### notifications 테이블
@@ -405,6 +405,23 @@ UVIS 서버 업로드 시도
 
 | 버전 | 날짜 | 주요 변경 내용 |
 |------|------|----------------|
+| **v20250321T** | 2025-03-21 | **🟢 고객사 룸 배송상세정보 추가사진 표시 개선**: ① `room.js` — 상차/하차 추가사진 섹션을 사진이 0장이어도 항상 표시 ("기사가 업로드한 추가사진이 나타납니다" 안내 문구). ② `saveLoadingExtraPhotos()` — 저장 실패 시 오류 토스트 표시 + 900KB 초과 시 저장 차단 경고. ③ `saveStopPhotos()` — 동일 크기 제한 + 실패 토스트 추가. ④ `room.js` 캐시 버전 S→T 업데이트 (H로 캐시되어 추가사진 코드 미적용 문제 해결). ⑤ 추가사진 img onerror 처리 추가 |
+| **v20250321S** | 2025-03-21 | **🔴 카메라 촬영 결과 전달 실패(APK) + 하차사진 저장 실패 해결**: ① `MainActivity.java` `fileChooserLauncher` — 카메라 촬영 후 `getData()`가 null일 때 `cameraImageUri`(EXTRA_OUTPUT 저장 파일)를 사용하도록 수정. 이것이 "카메라 촬영 후 아무 동작 없음"의 진짜 원인이었음 ② Base64 압축 강화 — 150KB 이하 보장(5단계). stop_photos에 여러 이미지 묶어 저장 시 페이로드 과대 방지 ③ `saveStopPhotos()` 에러 로그 강화 |
+| **v20250321R** | 2025-03-21 | **🔴 카메라 촬영 후 업로드 안됨 근본 해결(3차)**: labelWrap.onclick도 Android WebView에서 onchange 억제함을 확인. 모든 onclick(input, labelWrap, wrap) 완전 제거. 대신 visibilitychange → hidden 시점에 setFilePickerOpen(true) 설정. onchange 미발생 시 30초 타임아웃 자동 해제 |
+| **v20250321Q** | 2025-03-21 | **🔴 사진보관함 업로드 사진 전혀 안보이는 문제 해결**: apiGetList가 사진필드를 자동 제거하는 구조적 문제 근본 수정. gallery.js의 loadAllData()를 2단계로 재설계. applyFilter도 보완: stop_photos JSON에서 하차사진 추출, 상차/하차 추가사진(extra_photos) 표시 |
+| **v20250321P** | 2025-03-21 | **🔴 카메라 촬영 후 업로드 무시 + 상차 아이콘 미반영 해결**: ① `input.onclick`을 file input에 직접 바인딩하면 Android WebView에서 카메라 복귀 후 `onchange`가 발생하지 않는 버그 해결 — `input.onclick=null`, 부모 `.file-btn-wrap`에 `onclick` 이동 ② `setFilePickerOpen()` 헬퍼 신규 — 30초 타임아웃으로 `filePickerOpen` 자동 해제(안전장치) ③ `readFileToMemory` 완료 후 `input.value=''` 수행으로 순서 보정 ④ `admin.js`, `room.js` 상차 아이콘 판단을 `loading_invoice_photo` 대신 `loading_invoice_ts`(타임스탬프) 사용 — 목록 조회 시 사진필드 제외돼도 올바르게 표시 |
+| **v20250321O** | 2025-03-21 | **🔴 사진 업로드 실패(405 캐시 버스트) + 토스트 중복 제거**: D1 DB 재생성 후 구버전 utils.js(H) 캐시로 인해 PATCH 405 오류가 PUT 폴백 없이 그대로 throw되는 문제 해결. 모든 HTML 파일 utils.js 버전 O로 강제 업데이트(캐시 무효화). `apiPatch` 에 HTTP 상태 로그 추가(디버그 강화). `uploadImage`에 `silent` 옵션 추가 — 호출부에서 UVIS 실패 토스트를 제어해 중복 알림 방지 |
+| **v20250321N** | 2025-03-21 | **PATCH 405 오류 해결 — PUT 폴백 복구**: 서버가 PATCH를 지원하지 않아 405 반환 확인. `apiPatch`에 PATCH 405 감지 시 안전한 PUT 폴백 재적용, 단 GET으로 가져온 현재 레코드에서 이미지 필드 제거 후 머지하여 페이로드 폭증 방지. `GpsService.java`도 동일하게 수정. 전체 HTML 페이지 utils.js 버전 N으로 동기화 |
+| **v20250321M** | 2025-03-21 | **방/기사정보 삭제 시 GPS 자동 종료**: `startSessionValidPoll()` 신규 — 30초마다 배송건+방(room) 존재 확인. 배송건 404/deleted 시 `handleDeliveryDeleted`, 방 404/비활성 시 `_handleRoomDeleted` 호출 → GPS 종료+세션 초기화+PIN 화면 이동. `startPhotoRequestPoll`에도 404 감지 일관 적용. 하차완료 시 `stopSessionValidPoll` 호출 추가 |
+| **v20250321L** | 2025-03-21 | **🔴 사진 업로드 실패 근본 해결 - 이벤트 중복 등록 + 압축 불안정**: `addEventListener` 방식을 `onchange` 프로퍼티 방식으로 전환 - renderWorkScreen 재호출 시 핸들러가 누적 등록되어 uploadLoadingPhoto가 2회 실행되는 race condition 해결. fileToBase64를 FileReader DataURL 방식으로 재작성 - createObjectURL이 Blob 기반 File에서 실패하는 Android WebView 환경 대응 |
+| **v20250321K** | 2025-03-21 | **🔴 사진 UI 상태 꼬임 해결**: _resetLoadingCardUI 신규 추가 - renderWorkScreen 재호출 시 상차 카드 완전 초기화 후 재렌더링. _rebindLoadingPhotoInput 신규 추가 |
+| **v20250321J** | 2025-03-21 | **🔴 로그인 시 기존 방 정보 고정 문제 해결**: 재접속 시 세션 복원 전 서버에서 기사 배송건 실시간 재확인(`verifyDriverSession`) — 방/배송건이 삭제된 경우 세션 초기화 후 PIN 화면으로 이동. `handleDeliveryDeleted`의 `alert()` → `showToast`로 교체(WebView 차단 대응) |
+| **v20250321I** | 2025-03-21 | **🔴 상차완료 자동처리·취소불가·로그인 초기화 해결**: ① `confirm()` → 커스텀 모달(`showConfirm`)로 전면 교체 — Android WebView에서 `confirm()`이 차단되거나 `true`를 반환해 상차완료가 자동 실행되고 취소 다이얼로그가 무시되는 문제 해결 ② `restoreWorkOrShowSelect()` 오류 처리 개선 — 네트워크/서버 일시 오류 시 업무 세션을 유지(삭제하지 않음), 배송건 404(삭제)인 경우에만 세션 삭제하여 재접속 시 기존 작업 방 초기화 방지 ③ `driver.html` — 커스텀 확인 모달 HTML 추가 |
+| **v20250321H** | 2025-03-21 | **🔴 고객사 로그인 실패(폴백 해시 불일치) 해결**: HTTP/구형WebView 환경에서 `crypto.subtle` 사용 불가 → `_fallbackHash` 사용 → admin(HTTPS)에서 저장한 SHA-256 해시와 불일치 → 로그인 불가. **해결**: `rooms` 테이블에 `password_hash2` 필드 추가, `admin.js` 룸 저장 시 SHA-256(`password_hash`) + 폴백(`password_hash2`) 동시 저장, `main.js`·`room.js` 로그인 비교 시 `hash OR fallbackHash OR password_hash2` 셋 중 하나와 일치하면 통과 |
+| **v20250321G** | 2025-03-21 | **🔴 사진 업로드 연쇄 실패 완전 차단**: `apiPatch` PUT 폴백 완전 제거(서버가 PATCH 지원), `fileToBase64` 4단계 압축으로 300KB 미만 보장 |
+| **v20250321F** | 2025-03-21 | **🔴 카메라 촬영 업로드 불가 해결**: `readFileToMemory()` 신규 추가 — Android WebView 카메라 복귀 시 임시 파일 해제 전 ArrayBuffer로 메모리 고정 |
+| **v20250321E** | 2025-03-21 | **🔴 사진 안보임 근본 해결 — DB 스키마 정합성 수정**: `deliveries` 테이블에 `stop_photos` 필드 추가, `saveStopPhotos()` 신규 추가, `room.js` `apiGet` 단건 조회로 변경 |
+| **v20250321D** | 2025-03-21 | **🔴 사진 업로드 근본 해결 — stops 이미지 분리 저장**: stops JSON에서 이미지 분리, 별도 PATCH, PUT 폴백 이미지 필드 제외 |
 | **v20250321B** | 2025-03-21 | **전체 코드 점검 및 일괄 수정** ① `driver.html` — lightbox DOM 누락으로 추가사진 확대보기 불가 → lightbox 추가 ② `utils.js` — `fileToBase64` 이중 resolve 경쟁(img.onload/reader.onload) 수정, settled 플래그로 안전하게 처리; `openLightbox/closeLightbox`에 `display` 스타일 직접 제어 추가 ③ `driver.js` — `markLoaded`의 `loaded_at` 타임스탬프 불일치 수정(동일 변수 사용); `handleFullLogout` 재로그인 시 PIN 폼 이벤트 재바인딩 되도록 주석 명확화; 버전 주석 갱신 ④ `room.js` — `loadDeliveries` limit 200→500; `handleGatePassword` 폴백 해시 검증 추가(HTTP/WebView 환경 대응) ⑤ `admin.js` — 통계 조회 limit 1000→500, `total` 서버 필드 활용으로 전체 건수 정확히 표시 |
 | **v20250321A** | 2025-03-21 | **사진업로드 최종 수정**: `setupLoadingPhotoInput`에서 `this.files[0]` await 전 지역변수 저장·`input.value=''` 추가, `triggerLoadingRePhoto`·`triggerStopRePhoto` 재촬영 시 `_handlerBound` 리셋 및 `filePickerOpen` 설정, `pageshow` 이벤트에 `filePickerOpen` 가드 추가. **알림음 수정**: `utils.js` AudioContext `suspended` 상태 시 `resume()` 후 재생 + 첫 클릭/터치 시 AudioContext 활성화 로직 추가(브라우저 자동재생 정책 대응) |
 | **v20250320V** | 2025-03-21 | **배포 전 기능 전체 테스트**: gallery.html utils.js 버전 동기화(I→U), **보안개선** — index.html이 `password_hash`를 HTML onclick에 직접 노출하던 문제 수정(서버 직접 조회 방식으로 전환), 전체 페이지 버전 U로 일관화 |

@@ -261,7 +261,11 @@ async function handleSaveRoom(e) {
 
     try {
         const data = { room_name: name, contact, description: desc, is_active: true };
-        if (pw) data.password_hash = await hashPassword(pw);
+        if (pw) {
+            // ★ SHA-256 해시 + 폴백 해시 동시 저장 (HTTP/구형WebView 환경 로그인 호환)
+            data.password_hash  = await hashPassword(pw);
+            data.password_hash2 = _fallbackHash(pw + '_cargo_salt_2025');
+        }
 
         if (id) {
             // ★ 캐시(allRooms)가 오래됐을 수 있으므로 서버에서 최신 데이터를 직접 조회 후 병합
@@ -324,9 +328,9 @@ function renderAdminDeliveries() {
     tbody.innerHTML = filtered.map(d => {
         const room = allRooms.find(r => r.id === d.room_id);
         const roomName = room ? room.room_name : '-';
-        const hasLoadInv = !!d.loading_invoice_photo;
-        const hasLoadTemp = !!d.loading_temp_photo;
-        const hasDelInv = !!d.delivery_invoice_photo;
+        const hasLoadInv  = !!(d.loading_invoice_ts  || d.loading_invoice_photo);
+        const hasLoadTemp = !!(d.loading_temp_ts     || d.loading_temp_photo);
+        const hasDelInv   = !!(d.delivery_invoice_photo);
         const hasDelTemp = !!d.delivery_temp_photo;
         const gpsAge = d.gps_updated_at ? Date.now() - parseInt(d.gps_updated_at) : null;
         const gpsRecent = gpsAge && gpsAge < 10 * 60 * 1000;

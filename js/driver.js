@@ -1,6 +1,6 @@
 /* ===========================
    기사 페이지 JS - driver.js
-   v20250321B
+   v20250321T
    - 촬영 즉시 자동업로드
    - 수정 버튼 (재촬영)
    - GPS 지속 유지 + 자동 재시도
@@ -34,6 +34,21 @@ let isBackground  = false;
 
 // ★ 파일선택(카메라/갤러리)이 열려있을 때 visibilitychange로 GPS가 재시작되지 않도록 플래그
 let filePickerOpen = false;
+let _filePickerOpenTimer = null; // 안전장치: filePickerOpen이 오래 true면 자동 초기화
+
+/** filePickerOpen을 true로 설정하고 30초 후 자동 초기화 안전장치 */
+function setFilePickerOpen(val) {
+    filePickerOpen = val;
+    if (_filePickerOpenTimer) { clearTimeout(_filePickerOpenTimer); _filePickerOpenTimer = null; }
+    if (val) {
+        // Android에서 onchange가 발생 안 해도 30초 후 자동 해제
+        _filePickerOpenTimer = setTimeout(() => {
+            filePickerOpen = false;
+            _filePickerOpenTimer = null;
+            console.warn('[filePickerOpen] 30초 타임아웃 — 자동 해제');
+        }, 30000);
+    }
+}
 
 // ★ GPS 위치 요청 폴링 (화주가 요청 시 즉시 전송)
 let gpsRequestPollTimer = null;
@@ -42,6 +57,9 @@ let lastKnownRequestAt  = 0;  // 마지막으로 처리한 요청 시각
 // ★ 사진 촬영 요청 폴링 (화주가 요청 시 기사 앱에 알림)
 let photoRequestPollTimer = null;
 let lastKnownPhotoRequestAt = 0;
+
+// ★ 세션 유효성 폴링 (방/배송건 삭제 감지 → GPS 자동 종료)
+let sessionValidPollTimer = null;
 
 // ★ 저속 감지 + 상차 4시간 초과 알림 타이머
 let alertCheckTimer       = null;
@@ -53,6 +71,34 @@ const LOW_SPEED_THRESHOLD  = 15;               // km/h 미만
 const LOW_SPEED_DURATION   = 40 * 60 * 1000;  // 40분 (최초 발동 기준)
 const LOADED_ALERT_DELAY   = 4 * 60 * 60 * 1000; // 4시간 (최초 발동 기준)
 const REPEAT_INTERVAL      = 5 * 60 * 1000;   // 반복 알림 간격 5분
+
+/* =====================
+   커스텀 확인 모달 (Android WebView confirm() 대체)
+   ===================== */
+function showConfirm(message, okLabel, dangerOk) {
+    return new Promise(resolve => {
+        const modal    = document.getElementById('confirmModal');
+        const msgEl    = document.getElementById('confirmModalMsg');
+        const okBtn    = document.getElementById('confirmModalOk');
+        const cancelBtn = document.getElementById('confirmModalCancel');
+        if (!modal) { resolve(window.confirm(message)); return; }
+
+        msgEl.textContent = message;
+        okBtn.textContent = okLabel || '확인';
+        okBtn.style.background = dangerOk ? '#ef4444' : '#0891b2';
+        modal.style.display = 'flex';
+
+        function cleanup() {
+            modal.style.display = 'none';
+            okBtn.removeEventListener('click', onOk);
+            cancelBtn.removeEventListener('click', onCancel);
+        }
+        function onOk()     { cleanup(); resolve(true);  }
+        function onCancel() { cleanup(); resolve(false); }
+        okBtn.addEventListener('click', onOk);
+        cancelBtn.addEventListener('click', onCancel);
+    });
+}
 
 /* =====================
    localStorage 세션 헬퍼
@@ -113,6 +159,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const sessionSaved = Session.get('driver_session');
     if (sessionSaved && sessionSaved.driverName && (Date.now() - sessionSaved.timestamp < 12 * 60 * 60 * 1000)) {
         currentDriverName = sessionSaved.driverName;
+        // ★ 서버에서 배송건 재확인 (방 삭제 / 배송건 삭제 감지)
+        const valid = await verifyDriverSession(sessionSaved.driverName, sessionSaved.pinHash);
+        if (!valid) return; // verifyDriverSession 내부에서 로그아웃 처리
         await restoreWorkOrShowSelect();
         return;
     }
@@ -120,6 +169,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const lsSaved = lsGetSession();
     if (lsSaved && lsSaved.driverName && (Date.now() - lsSaved.timestamp < 12 * 60 * 60 * 1000)) {
         currentDriverName = lsSaved.driverName;
+        // ★ 서버에서 배송건 재확인 (방 삭제 / 배송건 삭제 감지)
+        const valid = await verifyDriverSession(lsSaved.driverName, lsSaved.pinHash);
+        if (!valid) return; // verifyDriverSession 내부에서 로그아웃 처리
         // sessionStorage에도 동기화
         Session.set('driver_session', { driverName: lsSaved.driverName, pinHash: lsSaved.pinHash, timestamp: Date.now() });
         await restoreWorkOrShowSelect();
@@ -128,6 +180,69 @@ document.addEventListener('DOMContentLoaded', async () => {
     showPinSection();
 });
 
+/* ================================================
+   ★ 세션 유효성 서버 재검증
+   - 재접속 시 기사 PIN이 DB에 여전히 유효한지 확인
+   - 배송건이 0건 이거나 방이 삭제된 경우 → 세션 초기화 후 PIN 화면
+   ================================================ */
+async function verifyDriverSession(driverName, pinHash) {
+    try {
+        const data = await apiGetList('tables/deliveries?limit=500');
+        const all  = data.data || [];
+        const pinHashFallback = pinHash ? _fallbackHash(pinHash + '_verify') : null;
+
+        // 이름 일치하는 배송건이 하나라도 있는지 확인 (PIN 재검증 포함)
+        const matched = all.filter(d =>
+            d.driver_name &&
+            d.driver_name.replace(/\s/g, '') === driverName.replace(/\s/g, '') &&
+            d.status !== 'delivered'
+        );
+
+        if (matched.length === 0) {
+            // 진행 중 배송건이 없음 → 완료된 것만 있는지 확인
+            const anyMatch = all.some(d =>
+                d.driver_name &&
+                d.driver_name.replace(/\s/g, '') === driverName.replace(/\s/g, '')
+            );
+            if (!anyMatch) {
+                // 이 기사 이름으로 등록된 배송건 자체가 없음 → 방이 삭제됐거나 기사 정보 삭제
+                console.warn('[verifyDriverSession] 기사 배송건 없음 → 세션 초기화');
+                showToast('⚠️ 등록된 배송 정보가 없습니다. 다시 로그인해주세요.', 'error', 4000);
+                _forceLogout();
+                return false;
+            }
+            // 모든 배송이 완료된 경우는 선택 화면에서 목록 표시 (정상 흐름)
+        }
+        return true; // 유효한 세션
+    } catch (e) {
+        // 네트워크 오류 시 세션 유지 (서버 일시 장애 대응)
+        console.warn('[verifyDriverSession] 서버 확인 실패, 세션 유지:', e);
+        return true;
+    }
+}
+
+/* 강제 로그아웃 (세션만 초기화, 토스트 없음) */
+function _forceLogout() {
+    gpsKeepAlive = false;
+    stopGPS();
+    stopGpsRequestPoll();
+    stopPhotoRequestPoll();
+    stopSessionValidPoll();  // ★ 세션 유효성 폴링 중지
+    stopAlertCheck();
+    currentDriverName = null;
+    currentDelivery   = null;
+    stops = [];
+    Session.remove('driver_session');
+    lsClearAll();
+    const ne = document.getElementById('pinDriverName');
+    const ce = document.getElementById('pinCode');
+    if (ne) ne.value = '';
+    if (ce) ce.value = '';
+    const form = document.getElementById('driverPinForm');
+    if (form) form.dataset.bound = '';
+    showPinSection();
+}
+
 /* 업무 중이던 배송건 자동 복원 또는 배송 선택 화면 이동 */
 async function restoreWorkOrShowSelect() {
     const lsWork = lsGetWork();
@@ -135,7 +250,7 @@ async function restoreWorkOrShowSelect() {
         // 업무 중이던 배송건 자동 복원 시도
         try {
             const delivery = await apiGet(`tables/deliveries/${lsWork.deliveryId}`);
-            const parsedStops = parseStops(delivery.stops);
+            const parsedStops = restoreStopPhotos(parseStops(delivery.stops), delivery);
             const allDone     = parsedStops.length > 0 && parsedStops.every(s => s.delivered_at);
             if (!allDone && delivery.status !== 'delivered') {
                 // 아직 하차 미완료 → 업무화면 자동 복원
@@ -147,17 +262,30 @@ async function restoreWorkOrShowSelect() {
                 showWorkSection();
                 setTimeout(() => {
                     startGPS();
-                    startGpsRequestPoll();   // ★ 위치 요청 폴링
-                    startPhotoRequestPoll(); // ★ 사진 요청 폴링
-                    startAlertCheck();       // ★ 저속/상차시간 알림
+                    startGpsRequestPoll();    // ★ 위치 요청 폴링
+                    startPhotoRequestPoll();  // ★ 사진 요청 폴링
+                    startSessionValidPoll();  // ★ 방/배송건 삭제 감지 폴링
+                    startAlertCheck();        // ★ 저속/상차시간 알림
                     showToast('📍 이전 업무 복원! GPS 자동 재시작됩니다.', 'success');
                 }, 800);
                 return;
+            } else {
+                // 배송 완료된 경우에만 세션 삭제
+                lsClearWork();
             }
         } catch (e) {
-            console.warn('업무 복원 실패, 배송 선택 화면으로 이동:', e);
+            // ★ 네트워크 오류 / 서버 오류 시 세션 유지 (기존 방 초기화 방지)
+            // 404(배송건 삭제)인 경우에만 세션 삭제
+            const isNotFound = e.message && (e.message.includes('404') || e.message.includes('not found'));
+            if (isNotFound) {
+                console.warn('배송건이 삭제됨, 세션 초기화:', e);
+                lsClearWork();
+            } else {
+                // 일시적 오류 — 세션 유지하고 선택 화면으로 이동 (세션 삭제 안 함)
+                console.warn('업무 복원 일시 실패 (세션 유지), 배송 선택 화면으로 이동:', e);
+                showToast('⚠️ 업무 복원 실패. 배송건을 다시 선택해주세요.', 'error', 4000);
+            }
         }
-        lsClearWork(); // 복원 실패 또는 이미 완료된 경우 초기화
     }
     await showSelectSection();
 }
@@ -168,6 +296,11 @@ document.addEventListener('visibilitychange', () => {
         // 백그라운드로 전환됨
         isBackground = true;
         startBgCounter();
+        // ★ 파일 선택(카메라/갤러리) 또는 다른 앱 전환 모두 여기서 감지
+        // filePickerOpen=true 로 설정해두면 복귀 시 GPS 재시작 억제
+        // onchange가 발생하면 setFilePickerOpen(false) 로 해제됨
+        // onchange가 발생 안 해도 30초 타임아웃으로 자동 해제(setFilePickerOpen 내부)
+        setFilePickerOpen(true);
 
     } else if (document.visibilityState === 'visible') {
         // 포그라운드로 복귀
@@ -175,7 +308,9 @@ document.addEventListener('visibilitychange', () => {
         stopBgCounter();
 
         // ★ 파일 선택(카메라/갤러리)으로 인한 복귀면 GPS 재시작 건너뜀
-        // filePickerOpen은 change 이벤트에서만 false로 변경 (여기서 리셋하면 change보다 먼저 실행돼 업로드 방해)
+        // filePickerOpen은 visibilitychange(hidden) 에서 true로 설정되고
+        // onchange 이벤트 발생 시 setFilePickerOpen(false) 로 해제됨
+        // onchange 미발생 시에도 30초 타임아웃으로 자동 해제됨
         if (filePickerOpen) {
             // Wake Lock만 재획득하고 GPS 재시작은 건너뜀
             if (gpsKeepAlive) requestWakeLock();
@@ -461,7 +596,7 @@ async function handleStartWork() {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 로딩 중...';
     try {
         currentDelivery = await apiGet(`tables/deliveries/${deliveryId}`);
-        stops           = parseStops(currentDelivery.stops);
+        stops           = restoreStopPhotos(parseStops(currentDelivery.stops), currentDelivery);
         const allDone   = stops.length > 0 && stops.every(s => s.delivered_at);
         gpsKeepAlive    = !allDone;
 
@@ -484,6 +619,8 @@ async function handleStartWork() {
         startGpsRequestPoll();
         // ★ 사진 촬영 요청 폴링 시작
         startPhotoRequestPoll();
+        // ★ 방/배송건 삭제 감지 폴링 시작 (30초 간격)
+        startSessionValidPoll();
         // ★ 저속 감지 + 상차 4시간 초과 알림 타이머 시작
         startAlertCheck();
         showToast('업무를 시작합니다!', 'success');
@@ -517,6 +654,10 @@ function renderWorkScreen() {
     // 냉동/냉장 타입이면 온도기록지 카드에 AB온도 안내 배지 표시
     refreshTempCardNotice();
 
+    // ★ 상차 카드 UI 완전 초기화 (renderWorkScreen 재호출 시 상태 꼬임 방지)
+    _resetLoadingCardUI('invoice');
+    _resetLoadingCardUI('temp');
+
     // 상차 기존 사진 복원
     if (d.loading_invoice_photo) {
         setPhotoPreview('loadingInvoicePreview', d.loading_invoice_photo);
@@ -539,9 +680,9 @@ function renderWorkScreen() {
     } catch { loadingExtraPhotos = []; }
     renderExtraPhotoGrid('loading');
 
-    // ★ 상차사진 input 바인딩 (renderWorkScreen 호출마다 재바인딩)
-    setupLoadingPhotoInput('invoice');
-    setupLoadingPhotoInput('temp');
+    // ★ 상차사진 input 바인딩 (renderWorkScreen 호출마다 강제 재바인딩)
+    _rebindLoadingPhotoInput('invoice');
+    _rebindLoadingPhotoInput('temp');
     // 추가사진 input 바인딩
     bindExtraPhotoInput('loading');
 
@@ -614,31 +755,75 @@ function updateStatusDisplay(status) {
 /* ================================================
    ★ 상차 사진 — 촬영/선택 즉시 자동업로드
    ================================================ */
-function setupLoadingPhotoInput(type) {
-    const inputId = type === 'invoice' ? 'loadingInvoiceInput' : 'loadingTempInput';
-    const input   = document.getElementById(inputId);
+/* 상차 카드 UI 초기화 — renderWorkScreen 재호출 시 상태 꼬임 방지 */
+function _resetLoadingCardUI(type) {
+    const cardId  = type === 'invoice' ? 'loadingInvoiceCard'    : 'loadingTempCard';
+    const prevId  = type === 'invoice' ? 'loadingInvoicePreview' : 'loadingTempPreview';
+    const statId  = type === 'invoice' ? 'loadingInvoiceStatus'  : 'loadingTempStatus';
+    const labelId = type === 'invoice' ? 'loadingInvoiceLabel'   : 'loadingTempLabel';
+    const editId  = type === 'invoice' ? 'loadingInvoiceEditBtn' : 'loadingTempEditBtn';
+    const card    = document.getElementById(cardId);
+    const label   = document.getElementById(labelId);
+    const edit    = document.getElementById(editId);
+    const stat    = document.getElementById(statId);
+    const prev    = document.getElementById(prevId);
+    if (card)  card.classList.remove('uploaded');
+    if (label) label.style.display = 'inline-block'; // 촬영/선택 버튼 보이기
+    if (edit)  edit.style.display  = 'none';          // 수정 버튼 숨기기
+    if (stat)  stat.innerHTML      = '';
+    if (prev)  prev.innerHTML      = type === 'invoice'
+        ? `<i class="fas fa-file-invoice"></i><p>거래명세표</p><span>사진 없음</span>`
+        : `<i class="fas fa-thermometer-half"></i><p>온도기록지</p><span>사진 없음</span>`;
+    // onchange 프로퍼티 방식이므로 _handlerBound 리셋 불필요 — _rebindLoadingPhotoInput에서 항상 덮어씀
+}
+
+/* 상차 사진 input 바인딩 (onchange 프로퍼티 방식 — 중복 등록 방지) */
+function _rebindLoadingPhotoInput(type) {
+    const inputId  = type === 'invoice' ? 'loadingInvoiceInput' : 'loadingTempInput';
+    const labelId  = type === 'invoice' ? 'loadingInvoiceLabel' : 'loadingTempLabel';
+    const input    = document.getElementById(inputId);
+    const labelWrap = document.getElementById(labelId);
     if (!input) return;
-    if (input._handlerBound) return; // 이미 바인딩됨
-    input._handlerBound = true;
-    // ★ 파일 선택창이 열릴 때 플래그 설정 (visibilitychange GPS 재시작 방지)
-    input.addEventListener('click', () => { filePickerOpen = true; }, { passive: true });
-    input.addEventListener('change', async function () {
-        filePickerOpen = false; // 선택 완료 또는 취소
+
+    // ★ input.onclick, labelWrap.onclick 모두 제거
+    // filePickerOpen 플래그는 visibilitychange(hidden) 에서 자동 설정됨
+    // — onclick을 file input 또는 부모에 걸면 Android WebView에서
+    //   카메라 복귀 후 onchange가 발생하지 않는 버그 있음
+    input.onclick = null;
+    if (labelWrap) labelWrap.onclick = null;
+
+    // ★ onchange 프로퍼티로 덮어씌우기 — addEventListener와 달리 항상 1개만 유지
+    input.onchange = async function () {
+        setFilePickerOpen(false);
         if (!this.files || !this.files[0]) return;
-        // ★ await 전에 파일 참조 저장 (WebView에서 this.files가 사라지는 문제 방지)
-        const file = this.files[0];
-        this.value = ''; // 동일 파일 재선택 가능하도록
+        const file     = this.files[0];
+        const fileName = file.name;
+        const fileType = file.type || 'image/jpeg';
+        // ★ value 초기화는 readFileToMemory로 파일을 메모리에 올린 뒤에 수행
+        //   (초기화를 먼저 하면 Android에서 파일 참조가 끊길 수 있음)
+
         const previewId = type === 'invoice' ? 'loadingInvoicePreview' : 'loadingTempPreview';
         showUploadingSpinner(previewId);
         try {
-            const imgValue = await uploadImage(file);
+            const safeFile = await readFileToMemory(file, fileName, fileType);
+            this.value = ''; // 메모리 적재 완료 후 초기화 (동일 파일 재선택 허용)
+            const imgValue = await uploadImage(safeFile, { silent: true });
+            if (imgValue && !imgValue.startsWith('http')) {
+                showToast('⚠️ 이미지 서버 연결 실패. 사진을 직접 저장합니다.', 'warning', 3000);
+            }
             await uploadLoadingPhoto(type, imgValue);
         } catch (err) {
-            console.error(err);
-            showToast('이미지 처리 실패.', 'error');
+            console.error('[loadingPhoto] 업로드 오류:', err);
+            showToast('이미지 처리 실패. 다시 시도해주세요.', 'error');
             restoreLoadingPreview(type);
         }
-    });
+    };
+    input._handlerBound = true;
+}
+
+/* 기존 setupLoadingPhotoInput — triggerLoadingRePhoto에서 재촬영 시 사용 */
+function setupLoadingPhotoInput(type) {
+    _rebindLoadingPhotoInput(type);
 }
 
 async function uploadLoadingPhoto(type, b64) {
@@ -696,11 +881,9 @@ function triggerLoadingRePhoto(type) {
     const input   = document.getElementById(inputId);
     if (!input) return;
     input.value = '';
-    // ★ 핸들러 재바인딩을 위해 플래그 리셋
-    input._handlerBound = false;
+    // onchange 방식: setupLoadingPhotoInput이 항상 핸들러를 덮어씌움
     setupLoadingPhotoInput(type);
-    // ★ 파일 선택창 바로 열기
-    filePickerOpen = true;
+    setFilePickerOpen(true);
     input.click();
 }
 
@@ -718,7 +901,7 @@ function triggerPhotoInput(inputId) {
    ===================== */
 async function markLoaded() {
     if (!currentDelivery) return;
-    if (!confirm('상차 완료 처리하시겠습니까?')) return;
+    if (!await showConfirm('상차 완료 처리하시겠습니까?', '완료 처리')) return;
     try {
         const loadedAt = Date.now(); // ★ 동일한 타임스탬프 사용
         await apiPatch(`tables/deliveries/${currentDelivery.id}`, {
@@ -751,7 +934,7 @@ async function markLoaded() {
    ===================== */
 async function cancelLoaded() {
     if (!currentDelivery) return;
-    if (!confirm('⚠️ 상차를 취소하시겠습니까?\n\n상차 전 대기 상태로 돌아갑니다.\n(업로드한 사진은 유지됩니다)')) return;
+    if (!await showConfirm('⚠️ 상차를 취소하시겠습니까?\n\n상차 전 대기 상태로 돌아갑니다.\n(업로드한 사진은 유지됩니다)', '취소 처리', true)) return;
 
     try {
         await apiPatch(`tables/deliveries/${currentDelivery.id}`, {
@@ -989,27 +1172,39 @@ function renderStopSection(idx, stop) {
 
 /* ★ 하차 사진 자동업로드 바인딩 */
 function bindStopInput(idx, type) {
-    const inputId = type === 'invoice' ? `stopInvInput_${idx}` : `stopTmpInput_${idx}`;
-    const input   = document.getElementById(inputId);
-    if (!input || input._handlerBound) return;
-    input._handlerBound = true;
-    // ★ 카메라/갤러리 선택창 열릴 때 플래그 ON
-    input.addEventListener('click', () => { filePickerOpen = true; }, { passive: true });
-    input.addEventListener('change', async function () {
-        // ★ 파일 선택이 이뤄졌으니 플래그 OFF
-        filePickerOpen = false;
+    const inputId    = type === 'invoice' ? `stopInvInput_${idx}` : `stopTmpInput_${idx}`;
+    const labelWrapId = type === 'invoice' ? `stopInvLabel_${idx}` : `stopTmpLabel_${idx}`;
+    const input      = document.getElementById(inputId);
+    const labelWrap  = document.getElementById(labelWrapId);
+    if (!input) return;
+
+    // ★ input.onclick, labelWrap.onclick 모두 제거
+    // filePickerOpen 플래그는 visibilitychange(hidden) 에서 자동 설정됨
+    input.onclick = null;
+    if (labelWrap) labelWrap.onclick = null;
+
+    // ★ onchange 프로퍼티로 덮어씌우기 — 중복 핸들러 방지
+    input.onchange = async function () {
+        setFilePickerOpen(false);
         if (!this.files || !this.files[0]) return;
-        const file = this.files[0];
-        this.value = ''; // 동일파일 재선택 가능하도록
+        const file     = this.files[0];
+        const fileName = file.name;
+        const fileType = file.type || 'image/jpeg';
+
         const prevId = type === 'invoice' ? `stopInvPreview_${idx}` : `stopTmpPreview_${idx}`;
         showUploadingSpinner(prevId);
         try {
-            const imgValue = await uploadImage(file);
+            const safeFile = await readFileToMemory(file, fileName, fileType);
+            this.value = ''; // 메모리 적재 완료 후 초기화
+            const imgValue = await uploadImage(safeFile, { silent: true });
+            if (imgValue && !imgValue.startsWith('http')) {
+                showToast('⚠️ 이미지 서버 연결 실패. 사진을 직접 저장합니다.', 'warning', 3000);
+            }
             stops[idx][type === 'invoice' ? 'invoice_photo' : 'temp_photo'] = imgValue;
             await uploadStopPhoto(idx, type);
         } catch (err) {
-            console.error(err);
-            showToast('이미지 처리 실패.', 'error');
+            console.error('[stopPhoto] 업로드 오류:', err);
+            showToast('이미지 처리 실패. 다시 시도해주세요.', 'error');
             const old = stops[idx][type === 'invoice' ? 'invoice_photo' : 'temp_photo'];
             if (old) setPhotoPreview(prevId, old);
             else {
@@ -1019,11 +1214,13 @@ function bindStopInput(idx, type) {
                     : `<i class="fas fa-thermometer-half"></i><p>온도기록지</p><span>사진 없음</span>`;
             }
         }
-    });
+    };
+    input._handlerBound = true;
 }
 
 async function uploadStopPhoto(idx, type) {
-    const photo   = stops[idx][type === 'invoice' ? 'invoice_photo' : 'temp_photo'];
+    const photoField = type === 'invoice' ? 'invoice_photo' : 'temp_photo';
+    const photo   = stops[idx][photoField];
     const prevId  = type === 'invoice' ? `stopInvPreview_${idx}` : `stopTmpPreview_${idx}`;
     const statId  = type === 'invoice' ? `stopInvStatus_${idx}`  : `stopTmpStatus_${idx}`;
     const cardId  = type === 'invoice' ? `stopInvCard_${idx}`    : `stopTmpCard_${idx}`;
@@ -1036,6 +1233,10 @@ async function uploadStopPhoto(idx, type) {
         if (type === 'invoice') { stops[idx].invoice_date = dateKey; stops[idx].invoice_ts = now; }
         else                    { stops[idx].temp_date    = dateKey; stops[idx].temp_ts    = now; }
 
+        // ★ 이미지를 stop_photos 필드에 저장 (DB 스키마 필드 사용 — 안전)
+        await saveStopPhotos();
+
+        // ★ stops 메타데이터 저장 (이미지 없이)
         await saveStopsToServer();
 
         setPhotoPreview(prevId, photo);
@@ -1057,23 +1258,18 @@ async function uploadStopPhoto(idx, type) {
         // 온도기록지 업로드 완료 시 냉동/냉장이면 AB온도 확인 알림
         if (type === 'temp') showTempAbNotice(`stopTmpCard_${idx}`);
     } catch (err) {
-        console.error(err);
-        showToast('업로드 실패. 다시 시도해주세요.', 'error');
+        console.error('[uploadStopPhoto] 실패:', err.message, err);
+        showToast('하차 사진 저장 실패. 다시 시도해주세요.', 'error');
         setPhotoPreview(prevId, photo);
     }
-}
-
-/* ★ 수정 버튼 — 하차 재촬영 */
 function triggerStopRePhoto(idx, type) {
     const inputId = type === 'invoice' ? `stopInvInput_${idx}` : `stopTmpInput_${idx}`;
     const input   = document.getElementById(inputId);
     if (!input) return;
-    // ★ 핸들러 재바인딩을 위해 플래그 리셋
-    input._handlerBound = false;
+    // onchange 방식: bindStopInput이 항상 핸들러를 덮어씌움
     input.value = '';
     bindStopInput(idx, type);
-    // ★ 파일 선택창 바로 열기
-    filePickerOpen = true;
+    setFilePickerOpen(true);
     input.click();
 }
 
@@ -1087,8 +1283,8 @@ function updateStopLabel(idx, val) {
     }
 }
 
-function removeStop(idx) {
-    if (!confirm(`${stops[idx].label} 세트를 삭제하시겠습니까?`)) return;
+async function removeStop(idx) {
+    if (!await showConfirm(`${stops[idx].label} 세트를 삭제하시겠습니까?`, '삭제', true)) return;
     stops.splice(idx, 1);
     saveStopsToServer();
     const container = document.getElementById('stopsContainer');
@@ -1099,7 +1295,7 @@ function removeStop(idx) {
 
 /* ★ 도착 하차대기 처리 */
 async function markStopArrived(idx) {
-    if (!confirm(`${stops[idx].label} 도착 · 하차 대기 처리하시겠습니까?\n\n상차 후 경과 알림이 중단됩니다.`)) return;
+    if (!await showConfirm(`${stops[idx].label} 도착 · 하차 대기 처리하시겠습니까?\n\n상차 후 경과 알림이 중단됩니다.`, '도착 처리')) return;
     try {
         const now = Date.now();
         stops[idx].arrived_at = now;
@@ -1142,7 +1338,7 @@ async function markStopArrived(idx) {
 }
 
 async function markStopDelivered(idx) {
-    if (!confirm(`${stops[idx].label} 하차 완료 처리하시겠습니까?`)) return;
+    if (!await showConfirm(`${stops[idx].label} 하차 완료 처리하시겠습니까?`, '하차 완료')) return;
     try {
         const now   = Date.now();
         stops[idx].delivered_at = now;
@@ -1170,7 +1366,10 @@ async function markStopDelivered(idx) {
         if (allDone) {
             gpsKeepAlive = false;
             stopGPS();
-            stopAlertCheck();       // 저속/상차시간 알림 중지
+            stopAlertCheck();           // 저속/상차시간 알림 중지
+            stopSessionValidPoll();     // ★ 세션 유효성 폴링 중지
+            stopGpsRequestPoll();       // GPS 위치 폴링 중지
+            stopPhotoRequestPoll();     // 사진 요청 폴링 중지
             lowSpeedStartAt = null;
             lowSpeedAlertAt = null;
             loadedAlertAt   = null;
@@ -1187,9 +1386,76 @@ async function markStopDelivered(idx) {
     }
 }
 
+/* ★ stops 저장 — stops JSON에는 메타데이터만, 이미지는 stop_photos 별도 필드
+   (DB 스키마에 stop_photos 필드 정의됨 — v20250321E)
+   stop_photos 구조: { "0": {invoice_photo, temp_photo, extra_photos}, "1": {...} }
+*/
 async function saveStopsToServer() {
-    await apiPatch(`tables/deliveries/${currentDelivery.id}`, { stops: JSON.stringify(stops) });
-    currentDelivery.stops = JSON.stringify(stops);
+    // 1. 이미지 없는 슬림 stops 준비 (메타데이터만)
+    const slimStops = stops.map(s => {
+        // eslint-disable-next-line no-unused-vars
+        const { invoice_photo, temp_photo, extra_photos, ...meta } = s;
+        return meta;
+    });
+
+    // 2. stops 메타데이터 PATCH
+    await apiPatch(`tables/deliveries/${currentDelivery.id}`, {
+        stops: JSON.stringify(slimStops)
+    });
+    currentDelivery.stops = JSON.stringify(slimStops);
+}
+
+/* ★ stop_photos 필드에 이미지 저장
+   stops 배열의 모든 이미지를 stop_photos JSON 필드에 모아서 PATCH
+   DB에 스키마 필드(stop_photos)로 저장 → 안전하게 보존됨 */
+async function saveStopPhotos() {
+    // 현재 stop_photos JSON 빌드
+    const photos = {};
+    stops.forEach((s, i) => {
+        const entry = {};
+        if (s.invoice_photo !== undefined) entry.invoice_photo = s.invoice_photo;
+        if (s.temp_photo    !== undefined) entry.temp_photo    = s.temp_photo;
+        if (s.extra_photos  !== undefined) entry.extra_photos  = s.extra_photos;
+        if (Object.keys(entry).length > 0) photos[String(i)] = entry;
+    });
+    const json = JSON.stringify(photos);
+    const sizeKB = Math.round(json.length / 1024);
+
+    // ★ 페이로드 크기 로그 — 디버깅용
+    console.log(`[saveStopPhotos] 페이로드 크기: ${sizeKB}KB, stops수: ${stops.length}`);
+
+    if (sizeKB > 900) {
+        console.warn('[saveStopPhotos] 페이로드가 너무 큽니다. 저장을 건너뜁니다.');
+        showToast('⚠️ 하차 사진 저장 실패: 사진 크기 초과. UVIS 서버 연결을 확인해주세요.', 'error', 4000);
+        return;
+    }
+
+    try {
+        await apiPatch(`tables/deliveries/${currentDelivery.id}`, { stop_photos: json });
+        currentDelivery.stop_photos = json;
+        console.log('[saveStopPhotos] 저장 성공');
+    } catch (err) {
+        console.error('[saveStopPhotos] PATCH 실패:', err.message);
+        showToast('⚠️ 하차 사진 저장 실패. 다시 시도해주세요.', 'error', 3000);
+        throw err; // 호출부에서 처리
+    }
+}
+
+/* ★ DB에서 읽은 delivery 객체로 stops 배열에 이미지 복원
+   stop_photos JSON 필드에서 각 stop의 이미지를 stops 배열에 주입 */
+function restoreStopPhotos(parsedStops, delivery) {
+    let photos = {};
+    if (delivery.stop_photos) {
+        try { photos = JSON.parse(delivery.stop_photos); } catch { photos = {}; }
+    }
+    parsedStops.forEach((s, i) => {
+        const p = photos[String(i)];
+        if (!p) return;
+        if (p.invoice_photo !== undefined) s.invoice_photo = p.invoice_photo;
+        if (p.temp_photo    !== undefined) s.temp_photo    = p.temp_photo;
+        if (p.extra_photos  !== undefined) s.extra_photos  = p.extra_photos;
+    });
+    return parsedStops;
 }
 
 /* =====================
@@ -1198,9 +1464,10 @@ async function saveStopsToServer() {
 function handleFullLogout() {
     gpsKeepAlive = false;
     stopGPS();
-    stopGpsRequestPoll();   // GPS 위치 폴링 중지
-    stopPhotoRequestPoll(); // 사진 요청 폴링 중지
-    stopAlertCheck();       // 저속/상차시간 알림 중지
+    stopGpsRequestPoll();    // GPS 위치 폴링 중지
+    stopPhotoRequestPoll();  // 사진 요청 폴링 중지
+    stopSessionValidPoll();  // 세션 유효성 폴링 중지
+    stopAlertCheck();        // 저속/상차시간 알림 중지
     lowSpeedStartAt = null;
     lowSpeedAlertAt = null;
     loadedAlertAt   = null;
@@ -1272,8 +1539,10 @@ function handleDeliveryDeleted() {
     stopGPS();
     stopGpsRequestPoll();
     stopPhotoRequestPoll();
+    stopSessionValidPoll();  // ★ 세션 유효성 폴링 중지
     stopAlertCheck();
     releaseWakeLock();
+    gpsKeepAlive = false;
 
     // 세션/업무 데이터 완전 초기화
     currentDelivery   = null;
@@ -1284,8 +1553,8 @@ function handleDeliveryDeleted() {
     Session.remove('driver_session');
 
     // 알림 후 PIN 로그인 화면으로
-    alert('⚠️ 배송건이 삭제되었습니다.\n앱이 초기화됩니다.');
-    showPinSection();
+    showToast('⚠️ 배송건이 삭제되어 앱이 초기화됩니다.', 'error', 4000);
+    setTimeout(() => showPinSection(), 1500);
 }
 
 /* ================================================
@@ -1302,10 +1571,22 @@ function startPhotoRequestPoll() {
         if (!currentDelivery) { stopPhotoRequestPoll(); return; }
         try {
             const res = await fetch(`tables/deliveries/${currentDelivery.id}`);
+
+            // ★ 배송건 삭제 감지 → 자동 로그아웃
+            if (res.status === 404 || res.status === 410) {
+                handleDeliveryDeleted();
+                return;
+            }
             if (!res.ok) return;
             const d = await res.json();
-            const reqAt = d.photo_request_at ? Number(d.photo_request_at) : 0;
 
+            // ★ deleted 플래그 감지
+            if (d.deleted) {
+                handleDeliveryDeleted();
+                return;
+            }
+
+            const reqAt = d.photo_request_at ? Number(d.photo_request_at) : 0;
             if (reqAt > lastKnownPhotoRequestAt && reqAt > Date.now() - 120000) {
                 lastKnownPhotoRequestAt = reqAt;
                 const reqType = d.photo_request_type || '';
@@ -1320,6 +1601,86 @@ function stopPhotoRequestPoll() {
         clearInterval(photoRequestPollTimer);
         photoRequestPollTimer = null;
     }
+}
+
+/* ================================================
+   ★ 세션 유효성 폴링
+   30초마다 배송건·방 존재 여부를 확인 →
+   삭제됐거나 기사 정보가 없으면 GPS 자동 종료
+   ================================================ */
+function startSessionValidPoll() {
+    stopSessionValidPoll();
+    if (!currentDelivery) return;
+
+    sessionValidPollTimer = setInterval(async () => {
+        if (!currentDelivery) { stopSessionValidPoll(); return; }
+        try {
+            // 1) 배송건 존재 확인
+            const res = await fetch(`tables/deliveries/${currentDelivery.id}`);
+
+            if (res.status === 404 || res.status === 410) {
+                handleDeliveryDeleted();
+                return;
+            }
+            if (!res.ok) return; // 일시적 서버 오류 — 다음 주기에 재시도
+
+            const d = await res.json();
+            if (d.deleted) { handleDeliveryDeleted(); return; }
+
+            // 2) 방(room) 존재 확인
+            if (d.room_id) {
+                const roomRes = await fetch(`tables/rooms/${d.room_id}`);
+                if (roomRes.status === 404 || roomRes.status === 410) {
+                    // 방이 삭제됨 → GPS 종료 + 로그아웃
+                    _handleRoomDeleted();
+                    return;
+                }
+                if (roomRes.ok) {
+                    const room = await roomRes.json();
+                    if (room.deleted || room.is_active === false) {
+                        _handleRoomDeleted();
+                        return;
+                    }
+                }
+            }
+
+            // 3) 기사 이름 일치 여부 확인 (배송건에서 기사 이름이 바뀌면 감지)
+            if (currentDriverName && d.driver_name &&
+                d.driver_name.replace(/\s/g,'') !== currentDriverName.replace(/\s/g,'')) {
+                handleDeliveryDeleted();
+                return;
+            }
+
+        } catch (e) { /* 네트워크 오류 — 무시하고 다음 주기 진행 */ }
+    }, 30000); // 30초마다 확인
+}
+
+function stopSessionValidPoll() {
+    if (sessionValidPollTimer) {
+        clearInterval(sessionValidPollTimer);
+        sessionValidPollTimer = null;
+    }
+}
+
+/* 방(room)이 삭제된 경우 처리 */
+function _handleRoomDeleted() {
+    stopGPS();
+    stopGpsRequestPoll();
+    stopPhotoRequestPoll();
+    stopSessionValidPoll();
+    stopAlertCheck();
+    releaseWakeLock();
+    gpsKeepAlive = false;
+
+    currentDelivery    = null;
+    currentDriverName  = null;
+    stops              = [];
+    loadingExtraPhotos = [];
+    lsClearAll();
+    Session.remove('driver_session');
+
+    showToast('⚠️ 고객사 방이 삭제되어 GPS가 종료됩니다. 관리자에게 문의하세요.', 'error', 5000);
+    setTimeout(() => showPinSection(), 2000);
 }
 
 function showPhotoRequestAlert(reqType) {
@@ -1643,21 +2004,37 @@ function triggerExtraPhoto(section) {
  * input change 이벤트 바인딩 (한 번만)
  */
 function bindExtraPhotoInput(section) {
-    const inputId = `${section}ExtraInput`;
-    const input   = document.getElementById(inputId);
-    if (!input || input._handlerBound) return;
-    input._handlerBound = true;
-    // ★ 파일 선택창이 열릴 때 플래그 설정 (visibilitychange GPS 재시작 방지)
-    input.addEventListener('click', () => { filePickerOpen = true; }, { passive: true });
-    input.addEventListener('change', async function () {
-        filePickerOpen = false; // 선택 완료
+    // section: 'loading' → inputId: 'loadingExtraInput'
+    // section: 'stop_0'  → inputId: 'stop_0ExtraInput'
+    const realInputId = `${section}ExtraInput`;
+    const input = document.getElementById(realInputId);
+    if (!input) return;
+
+    // ★ input.onclick, wrap.onclick 모두 제거
+    // filePickerOpen 플래그는 visibilitychange(hidden) 에서 자동 설정됨
+    input.onclick = null;
+    const wrap = input.closest('.file-btn-wrap');
+    if (wrap) wrap.onclick = null;
+
+    // ★ onchange 프로퍼티로 덮어씌우기 — 중복 핸들러 방지
+    input.onchange = async function () {
+        setFilePickerOpen(false);
         if (!this.files || !this.files.length) return;
-        const files = Array.from(this.files);
-        this.value = ''; // 동일파일 재선택 가능하도록
-        for (const file of files) {
-            await uploadOneExtraPhoto(section, file);
+        const fileInfos = Array.from(this.files).map(f => ({
+            file: f, name: f.name, type: f.type || 'image/jpeg'
+        }));
+        this.value = '';
+        for (const fi of fileInfos) {
+            try {
+                const safeFile = await readFileToMemory(fi.file, fi.name, fi.type);
+                await uploadOneExtraPhoto(section, safeFile);
+            } catch (e) {
+                console.error('[extraPhoto] 읽기 실패:', e);
+                showToast('사진 읽기 실패. 다시 시도해주세요.', 'error');
+            }
         }
-    });
+    };
+    input._handlerBound = true;
 }
 
 /**
@@ -1669,7 +2046,11 @@ async function uploadOneExtraPhoto(section, file) {
     addExtraThumbSpinner(section, tempId);
 
     try {
-        const url = await uploadImage(file);
+        // silent:true — UVIS 실패 토스트는 여기서 제어
+        const url = await uploadImage(file, { silent: true });
+        if (url && !url.startsWith('http')) {
+            showToast('⚠️ 이미지 서버 연결 실패. 사진을 직접 저장합니다.', 'warning', 3000);
+        }
         const photo = { url, caption: '', ts: Date.now() };
 
         if (section === 'loading') {
@@ -1680,6 +2061,8 @@ async function uploadOneExtraPhoto(section, file) {
             const idx = parseInt(section.split('_')[1]);
             if (!stops[idx].extra_photos) stops[idx].extra_photos = [];
             stops[idx].extra_photos.push(photo);
+            // ★ stop_photos 필드에 이미지 저장 + stops 메타데이터 저장
+            await saveStopPhotos();
             await saveStopsToServer();
         }
 
@@ -1761,7 +2144,7 @@ function updateExtraCount(section) {
 
 /** 추가사진 삭제 */
 async function deleteExtraPhoto(section, idx) {
-    if (!confirm('이 사진을 삭제하시겠습니까?')) return;
+    if (!await showConfirm('이 사진을 삭제하시겠습니까?', '삭제', true)) return;
     try {
         if (section === 'loading') {
             loadingExtraPhotos.splice(idx, 1);
@@ -1770,6 +2153,8 @@ async function deleteExtraPhoto(section, idx) {
             const stopIdx = parseInt(section.split('_')[1]);
             if (stops[stopIdx] && stops[stopIdx].extra_photos) {
                 stops[stopIdx].extra_photos.splice(idx, 1);
+                // ★ stop_photos 필드 업데이트
+                await saveStopPhotos();
                 await saveStopsToServer();
             }
         }
@@ -1784,10 +2169,24 @@ async function deleteExtraPhoto(section, idx) {
 /** 상차 추가사진 서버 저장 */
 async function saveLoadingExtraPhotos() {
     const json = JSON.stringify(loadingExtraPhotos);
-    await apiPatch(`tables/deliveries/${currentDelivery.id}`, {
-        loading_extra_photos: json
-    });
-    currentDelivery.loading_extra_photos = json;
+    const sizeKB = Math.round(json.length / 1024);
+    console.log(`[saveLoadingExtraPhotos] 페이로드 크기: ${sizeKB}KB, 사진수: ${loadingExtraPhotos.length}`);
+    if (sizeKB > 900) {
+        console.warn('[saveLoadingExtraPhotos] 페이로드가 너무 큽니다. 저장을 건너뜁니다.');
+        showToast('⚠️ 추가사진 저장 실패: 사진 크기 초과. 재촬영해주세요.', 'error', 4000);
+        return;
+    }
+    try {
+        await apiPatch(`tables/deliveries/${currentDelivery.id}`, {
+            loading_extra_photos: json
+        });
+        currentDelivery.loading_extra_photos = json;
+        console.log('[saveLoadingExtraPhotos] 저장 성공');
+    } catch (err) {
+        console.error('[saveLoadingExtraPhotos] 저장 실패:', err.message);
+        showToast('⚠️ 상차 추가사진 저장 실패. 다시 시도해주세요.', 'error', 3000);
+        throw err;
+    }
 }
 
 /* ================================================

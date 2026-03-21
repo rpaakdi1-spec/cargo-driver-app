@@ -294,10 +294,13 @@ function getStatusIcon(status) {
 
 // ===== API 호출 =====
 
-// 사진 필드 (Base64) — 목록 조회 시 제외하여 페이로드 경량화
+// 사진 필드 (Base64/URL) — 목록 조회 시 제외하여 페이로드 경량화
+// ★ 'stops'는 v20250321D 이후 이미지 없는 메타데이터만 저장하므로 제외 대상에서 제거
+// ★ 'stop_photos'는 v20250321E 신규 추가 — 목록 조회 시 제외 (상세 단건 apiGet에서 조회)
 const PHOTO_FIELDS = [
     'loading_invoice_photo', 'loading_temp_photo',
-    'stops'  // 하차 사진을 포함한 JSON이므로 목록 조회 시 제외
+    'loading_extra_photos',
+    'stop_photos'           // 하차 사진 전체 JSON — 목록 조회 시 제외
 ];
 
 function stripPhotoFields(obj) {
@@ -376,58 +379,79 @@ async function apiPut(url, data) {
     return res.json();
 }
 
-// PATCH — 서버가 PATCH를 지원하면 직접 전송, 아니면 PUT으로 폴백
-// ★ 405가 반복되면 PATCH 시도를 건너뛰고 즉시 PUT 폴백
-// ★ PUT 폴백은 직렬화 큐로 race condition 방지
-let _patchSupported = true; // 한번 405 확인되면 false로 전환
-let _patchQueue     = Promise.resolve(); // 직렬화 큐
+// ★ PATCH → 405 시 이미지 필드를 제외한 안전한 PUT 폴백
+// PUT 폴백 시 GET으로 현재 레코드를 가져오되, 이미지 필드(Base64/대용량)는
+// 새 data에 있을 때만 포함시켜 페이로드 폭증을 방지
+const _IMAGE_FIELDS = [
+    'loading_invoice_photo', 'loading_temp_photo',
+    'loading_extra_photos',  'stop_photos', 'stops'
+];
+
+// PATCH 직렬화 큐 — 동일 URL 동시 PUT 폴백 시 race condition 방지
+const _patchQueue = {};
 
 async function apiPatch(url, data) {
-    // 1차: PATCH 직접 시도 (서버가 지원하는 경우)
-    if (_patchSupported) {
-        try {
-            const res = await fetch(url, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+    // 1차: PATCH 시도
+    let res;
+    try {
+        res = await fetch(url, {
+            method : 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body   : JSON.stringify(data)
+        });
+    } catch (networkErr) {
+        console.error(`[apiPatch] 네트워크 오류:`, networkErr);
+        throw new Error(`네트워크 오류 (PATCH): ${networkErr.message}`);
+    }
+    console.log(`[apiPatch] ${url} → HTTP ${res.status}`);
+
+    // PATCH 성공
+    if (res.ok) return res.json();
+
+    // PATCH 미지원(405) → PUT 폴백
+    if (res.status === 405) {
+        console.warn(`[apiPatch] PATCH 405 → PUT 폴백: ${url}`);
+        // 직렬화: 같은 URL에 동시에 PUT이 중복 실행되지 않도록
+        if (!_patchQueue[url]) _patchQueue[url] = Promise.resolve();
+        const result = await (_patchQueue[url] = _patchQueue[url].then(async () => {
+            // 현재 레코드 GET (이미지 필드도 포함되어 있으므로 머지 시 제외)
+            const getRes = await fetch(url);
+            if (!getRes.ok) throw new Error(`PUT 폴백 GET 실패: ${getRes.status}`);
+            const current = await getRes.json();
+
+            // 시스템 필드 제거
+            ['id','gs_project_id','gs_table_name','created_at','updated_at'].forEach(k => delete current[k]);
+
+            // 이미지 필드: 새 data에 포함된 경우만 유지, 없으면 current에서도 제거
+            // (대용량 Base64가 current에 있어도 payload에서 빠짐)
+            _IMAGE_FIELDS.forEach(k => {
+                if (!(k in data)) delete current[k];
             });
-            if (res.ok) return res.json();
-            if (res.status === 405) {
-                // 이 서버는 PATCH 미지원 — 이후 모든 요청은 PUT 폴백 사용
-                _patchSupported = false;
-                console.warn('[apiPatch] 서버가 PATCH를 지원하지 않음. PUT 폴백으로 전환합니다.');
-            } else {
-                throw new Error(`API Error: ${res.status}`);
+
+            // 새 data 머지
+            const merged = Object.assign(current, data);
+
+            const putRes = await fetch(url, {
+                method : 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body   : JSON.stringify(merged)
+            });
+            if (!putRes.ok) {
+                let detail = '';
+                try { const t = await putRes.text(); detail = t.substring(0, 300); } catch {}
+                console.error(`[apiPatch→PUT] ${url} → HTTP ${putRes.status}`, detail);
+                throw new Error(`API Error (PUT fallback): ${putRes.status} — ${detail}`);
             }
-        } catch (e) {
-            if (!e.message.startsWith('API Error')) throw e;
-        }
+            return putRes.json();
+        }));
+        return result;
     }
 
-    // 2차: PUT 폴백 — GET 후 데이터 병합하여 PUT
-    // ★ 같은 URL에 대한 동시 PUT fallback은 직렬화 큐로 처리 (race condition 방지)
-    // 여러 apiPatch가 동시에 같은 레코드를 GET→PUT 하면 서로 덮어쓸 수 있음
-    return new Promise((resolve, reject) => {
-        _patchQueue = _patchQueue.then(async () => {
-            try {
-                const current = await apiGet(url);
-                // 시스템 필드 제거 (서버가 관리하는 필드)
-                const systemFields = ['id', 'gs_project_id', 'gs_table_name', 'created_at', 'updated_at'];
-                systemFields.forEach(f => delete current[f]);
-
-                const merged = { ...current, ...data };
-                const res2 = await fetch(url, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(merged)
-                });
-                if (!res2.ok) throw new Error(`API Error (PUT fallback): ${res2.status}`);
-                resolve(await res2.json());
-            } catch(e) {
-                reject(e);
-            }
-        });
-    });
+    // 기타 오류
+    let detail = '';
+    try { const t = await res.text(); detail = t.substring(0, 300); } catch {}
+    console.error(`[apiPatch] ${url} → HTTP ${res.status}`, detail);
+    throw new Error(`API Error (PATCH): ${res.status} — ${detail}`);
 }
 
 async function apiDelete(url) {
@@ -436,46 +460,88 @@ async function apiDelete(url) {
     return true;
 }
 
+// ===== 파일을 메모리(Blob)로 즉시 읽기 =====
+// ★ Android 카메라 앱으로 촬영 시 임시 파일이 WebView 복귀 직후 해제될 수 있음
+// ★ change 이벤트 발생 즉시 파일 내용을 ArrayBuffer로 읽어 새 File 객체로 재생성
+// ★ 이렇게 하면 원본 임시 파일이 사라져도 업로드 계속 진행 가능
+function readFileToMemory(file, fileName, fileType) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                // ArrayBuffer → Uint8Array → Blob → File 순으로 재생성
+                const arrayBuffer = e.target.result;
+                const blob = new Blob([arrayBuffer], { type: fileType });
+                const safeFile = new File([blob], fileName || 'photo.jpg', { type: fileType });
+                resolve(safeFile);
+            } catch (err) {
+                reject(err);
+            }
+        };
+        reader.onerror = () => reject(new Error('파일 읽기 실패 (readFileToMemory)'));
+        reader.readAsArrayBuffer(file);
+    });
+}
+
 // ===== 이미지를 Base64로 변환 (리사이즈 포함) =====
-// ★ img.onload에서만 resolve, img.onerror 시 FileReader fallback (중복 resolve 방지)
+// ★ FileReader로 DataURL을 먼저 읽은 뒤 Image로 로드 → canvas 압축
+// ★ createObjectURL 대신 FileReader 방식으로 Blob 재생성 File도 안정적으로 처리
+// ★ 4단계 압축으로 반드시 300KB 미만 보장
 function fileToBase64(file) {
     return new Promise((resolve, reject) => {
         let settled = false;
         const done = (val) => { if (!settled) { settled = true; resolve(val); } };
         const fail = (e)  => { if (!settled) { settled = true; reject(e); } };
 
-        // 이미지 리사이즈 (최대 1024px, 품질 80%)
-        const img = new Image();
-        const objectUrl = URL.createObjectURL(file);
+        // 1단계: FileReader로 DataURL 읽기
+        const reader = new FileReader();
+        reader.onerror = () => fail(new Error('FileReader 실패'));
+        reader.onload = (e) => {
+            const dataUrl = e.target.result;
+            if (!dataUrl) { fail(new Error('DataURL 비어있음')); return; }
 
-        img.onload = () => {
-            URL.revokeObjectURL(objectUrl); // 메모리 해제
-            try {
-                const canvas = document.createElement('canvas');
-                const MAX = 1024;
-                let { width, height } = img;
-                if (width > MAX || height > MAX) {
-                    if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
-                    else               { width  = Math.round(width  * MAX / height); height = MAX; }
+            // 2단계: Image로 로드해 canvas 압축
+            const img = new Image();
+            img.onerror = () => {
+                // canvas 압축 불가 → DataURL 그대로 반환
+                console.warn('[fileToBase64] Image 로드 실패 — 원본 DataURL 반환');
+                done(dataUrl);
+            };
+            img.onload = () => {
+                try {
+                    // ★ stop_photos는 여러 이미지를 JSON으로 묶어 저장하므로
+                    //   개별 이미지를 150KB 이하로 유지해야 전체 페이로드 안전
+                    let result = _compressToCanvas(img, 800, 0.70);  // 1차: 800px / 70%
+                    if (result.length > 300000) result = _compressToCanvas(img, 640, 0.60);
+                    if (result.length > 250000) result = _compressToCanvas(img, 480, 0.50);
+                    if (result.length > 200000) result = _compressToCanvas(img, 360, 0.40);
+                    if (result.length > 150000) result = _compressToCanvas(img, 320, 0.35);
+                    console.log(`[fileToBase64] 압축 완료: ${Math.round(result.length/1024)}KB`);
+                    done(result);
+                } catch (e2) {
+                    // canvas 실패 → 원본 DataURL
+                    console.warn('[fileToBase64] canvas 압축 실패 — 원본 반환:', e2);
+                    done(dataUrl);
                 }
-                canvas.width  = width;
-                canvas.height = height;
-                canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-                done(canvas.toDataURL('image/jpeg', 0.8));
-            } catch (e) { fail(e); }
+            };
+            img.src = dataUrl;
         };
-
-        img.onerror = () => {
-            URL.revokeObjectURL(objectUrl);
-            // Canvas 실패 시 FileReader fallback
-            const reader = new FileReader();
-            reader.onload  = e => done(e.target.result);
-            reader.onerror = fail;
-            reader.readAsDataURL(file);
-        };
-
-        img.src = objectUrl;
+        reader.readAsDataURL(file);
     });
+}
+
+/** canvas 압축 헬퍼 */
+function _compressToCanvas(img, maxPx, quality) {
+    const canvas = document.createElement('canvas');
+    let { width, height } = img;
+    if (width > maxPx || height > maxPx) {
+        if (width > height) { height = Math.round(height * maxPx / width); width = maxPx; }
+        else                { width  = Math.round(width  * maxPx / height); height = maxPx; }
+    }
+    canvas.width  = width;
+    canvas.height = height;
+    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+    return canvas.toDataURL('image/jpeg', quality);
 }
 
 /* =====================================================
@@ -517,20 +583,29 @@ function setCachedToken(token, ttlSeconds = 1800) {
 }
 
 // ── 로그인 → Bearer Token 발급 (고정 계정, 24시간 TTL) ──
+// ★ 8초 타임아웃 — 서버 무응답 시 빠르게 폴백 전환
 async function getUvisToken() {
     const cached = getCachedToken();
     if (cached) return cached;
 
-    // Content-Type: application/x-www-form-urlencoded (서버 스펙)
     const body = new URLSearchParams();
     body.append('username', UVIS_USER);
     body.append('password', UVIS_PASS);
 
-    const res = await fetch(UVIS_LOGIN_URL, {
-        method : 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body   : body.toString()
-    });
+    const ctrl = new AbortController();
+    const tId  = setTimeout(() => ctrl.abort(), 8000); // 8초 타임아웃
+
+    let res;
+    try {
+        res = await fetch(UVIS_LOGIN_URL, {
+            method : 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body   : body.toString(),
+            signal : ctrl.signal
+        });
+    } finally {
+        clearTimeout(tId);
+    }
 
     if (!res.ok) {
         const txt = await res.text().catch(() => '');
@@ -538,11 +613,10 @@ async function getUvisToken() {
         throw new Error(`UVIS 로그인 오류: ${res.status}`);
     }
 
-    const json = await res.json();
+    const json  = await res.json();
     const token = json.access_token || json.token;
     if (!token) throw new Error('UVIS 로그인: 토큰을 받지 못했습니다.');
 
-    // 서버 TTL 24시간 → 23시간 캐시
     setCachedToken(token, json.expires_in || 82800);
     console.log('[UVIS] 로그인 성공, 토큰 캐시됨');
     return token;
@@ -550,31 +624,48 @@ async function getUvisToken() {
 
 /**
  * 이미지 파일을 UVIS 서버(MinIO)에 업로드
+ * ★ 10초 타임아웃
  * @param {File} file
  * @returns {Promise<string>} 이미지 URL
  */
 async function uploadImageToUVIS(file) {
-    const token = await getUvisToken();   // 자동 로그인/캐시
+    const token = await getUvisToken();
 
     const form = new FormData();
     form.append('file', file);
     form.append('folder', UVIS_FOLDER);
 
-    const res = await fetch(UVIS_UPLOAD_URL, {
-        method : 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body   : form
-    });
+    const ctrl = new AbortController();
+    const tId  = setTimeout(() => ctrl.abort(), 10000); // 10초 타임아웃
+
+    let res;
+    try {
+        res = await fetch(UVIS_UPLOAD_URL, {
+            method : 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body   : form,
+            signal : ctrl.signal
+        });
+    } finally {
+        clearTimeout(tId);
+    }
 
     if (res.status === 401) {
-        // 토큰 만료 → 캐시 삭제 후 1회 재시도
         localStorage.removeItem(UVIS_TOKEN_KEY);
         const newToken = await getUvisToken();
-        const retry = await fetch(UVIS_UPLOAD_URL, {
-            method : 'POST',
-            headers: { 'Authorization': `Bearer ${newToken}` },
-            body   : form
-        });
+        const ctrl2 = new AbortController();
+        const tId2  = setTimeout(() => ctrl2.abort(), 10000);
+        let retry;
+        try {
+            retry = await fetch(UVIS_UPLOAD_URL, {
+                method : 'POST',
+                headers: { 'Authorization': `Bearer ${newToken}` },
+                body   : form,
+                signal : ctrl2.signal
+            });
+        } finally {
+            clearTimeout(tId2);
+        }
         if (!retry.ok) throw new Error(`UVIS 업로드 재시도 실패: ${retry.status}`);
         const j = await retry.json();
         return j.url;
@@ -593,21 +684,28 @@ async function uploadImageToUVIS(file) {
 }
 
 /**
- * 이미지 업로드 통합 함수 (우선순위: UVIS → imgBB → Base64 폴백)
+ * 이미지 업로드 통합 함수
+ * 우선순위: UVIS 서버(MinIO) → Base64 폴백
+ * ★ UVIS 실패해도 Base64로 반드시 반환 (업로드 흐름 차단 방지)
  * @param {File} file
- * @returns {Promise<string>} URL 또는 Base64
+ * @returns {Promise<string>} URL(UVIS 성공) 또는 Base64(폴백)
  */
-async function uploadImage(file) {
-    // UVIS 서버 (rhkdtls.cloud / MinIO) — 항상 시도
+async function uploadImage(file, { silent = false } = {}) {
+    // 1순위: UVIS MinIO 서버
     try {
-        return await uploadImageToUVIS(file);
+        const url = await uploadImageToUVIS(file);
+        if (url) return url;
     } catch (err) {
-        console.warn('[UVIS] 업로드 실패, Base64 폴백:', err.message);
-        showToast('⚠️ 이미지 서버 연결 실패. 임시로 기기에 저장됩니다.', 'warning', 4000);
+        console.warn('[uploadImage] UVIS 실패:', err.message);
     }
 
-    // 폴백: Base64 (UVIS 실패 시에만)
-    return fileToBase64(file);
+    // 2순위: Base64 폴백 (UVIS 불가 시 — DB에 직접 저장)
+    console.log('[uploadImage] Base64 폴백으로 저장합니다.');
+    // silent=true 이면 토스트 생략 (호출부에서 직접 토스트 제어)
+    if (!silent) showToast('⚠️ 이미지 서버 연결 실패. 사진을 직접 저장합니다.', 'warning', 3000);
+    const b64 = await fileToBase64(file);
+    console.log(`[uploadImage] Base64 크기: ${Math.round(b64.length / 1024)}KB`);
+    return b64;
 }
 
 // ── imgBB 보조 함수 (폴백용, 이전 호환) ──────────────

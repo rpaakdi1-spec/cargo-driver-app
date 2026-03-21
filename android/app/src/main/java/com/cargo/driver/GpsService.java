@@ -199,13 +199,18 @@ public class GpsService extends Service {
                 }
                 @Override
                 public void onResponse(Call call, Response response) {
-                    if (!response.isSuccessful()) {
-                        Log.w(TAG, "PATCH " + response.code() + ", PUT 재시도");
+                    int code = response.code();
+                    response.close();
+                    if (code == 405) {
+                        // PATCH 미지원 → GPS 전용 필드만 PUT
+                        Log.w(TAG, "PATCH 405 → PUT 폴백");
                         sendPut(url, body, JSON);
+                    } else if (!response.isSuccessful()) {
+                        Log.w(TAG, "PATCH " + code + " 실패");
+                        // 일시 오류 — 다음 주기에 재시도 (연쇄 실패 방지)
                     } else {
                         Log.d(TAG, "GPS 전송 성공 (PATCH)");
                     }
-                    response.close();
                 }
             });
         } catch (Exception e) {
@@ -213,8 +218,9 @@ public class GpsService extends Service {
         }
     }
 
-    private void sendPut(String url, JSONObject patchBody, MediaType JSON) {
+    private void sendPut(String url, JSONObject gpsData, MediaType JSON) {
         // GET으로 기존 데이터 가져와서 머지 후 PUT
+        // ★ 이미지 필드(loading_invoice_photo 등)는 반드시 제거하여 페이로드 폭증 방지
         Request getReq = new Request.Builder().url(url).get().build();
         httpClient.newCall(getReq).enqueue(new Callback() {
             @Override
@@ -228,11 +234,26 @@ public class GpsService extends Service {
                     String bodyStr  = response.body().string();
                     response.close();
                     JSONObject merged = new JSONObject(bodyStr);
-                    // patchBody 필드로 덮어쓰기
-                    java.util.Iterator<String> keys = patchBody.keys();
+
+                    // ★ 이미지/대용량 필드 제거 (페이로드 폭증 방지)
+                    String[] imageFields = {
+                        "loading_invoice_photo", "loading_temp_photo",
+                        "loading_extra_photos",  "stop_photos", "stops"
+                    };
+                    for (String field : imageFields) {
+                        merged.remove(field);
+                    }
+                    // 시스템 필드 제거
+                    String[] sysFields = {"id","gs_project_id","gs_table_name","created_at","updated_at"};
+                    for (String field : sysFields) {
+                        merged.remove(field);
+                    }
+
+                    // GPS 필드만 머지
+                    java.util.Iterator<String> keys = gpsData.keys();
                     while (keys.hasNext()) {
                         String k = keys.next();
-                        merged.put(k, patchBody.get(k));
+                        merged.put(k, gpsData.get(k));
                     }
                     Request putReq = new Request.Builder()
                             .url(url)

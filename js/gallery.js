@@ -95,13 +95,61 @@ async function loadAllData() {
             sel.appendChild(opt);
         });
 
-        // 배송 목록 (모든 것)
-        // limit=200: 갤러리는 최근 배송 사진만 표시 (서버 메모리 과부하 방지)
-        const dd = await apiGetList('tables/deliveries?limit=200');
-        allDeliveries = dd.data || [];
+        // ★ 1단계: 목록 조회 (사진 필드 제외 — 경량)
+        //   apiGetList는 사진 필드를 자동 제거하므로 타임스탬프 필드로 사진 존재 여부 파악
+        const dd = await apiGetList('tables/deliveries?limit=200&sort=created_at');
+        const listRows = dd.data || [];
 
         document.getElementById('galleryTotalBadge').innerHTML =
-            `<i class="fas fa-photo-video"></i> 배송 ${allDeliveries.length}건`;
+            `<i class="fas fa-photo-video"></i> 배송 ${listRows.length}건 확인 중...`;
+
+        // ★ 2단계: 사진이 있는 배송건만 단건 조회 (병렬, 최대 10개씩 배치)
+        //   타임스탬프 필드(loading_invoice_ts 등)가 있으면 사진 있음으로 판단
+        const hasPhoto = (d) =>
+            d.loading_invoice_ts || d.loading_temp_ts ||
+            d.delivery_invoice_ts || d.loading_extra_photos !== undefined ||
+            d.stops; // stops가 있으면 stop_photos도 있을 수 있음
+
+        const needDetail = listRows.filter(hasPhoto);
+        console.log(`[gallery] 전체 ${listRows.length}건 중 상세 조회 대상: ${needDetail.length}건`);
+
+        // 배치 병렬 조회 (10개씩)
+        const BATCH = 10;
+        const detailMap = {};
+        for (let i = 0; i < needDetail.length; i += BATCH) {
+            const batch = needDetail.slice(i, i + BATCH);
+            const results = await Promise.allSettled(
+                batch.map(d => apiGet(`tables/deliveries/${d.id}`))
+            );
+            results.forEach((r, idx) => {
+                if (r.status === 'fulfilled' && r.value) {
+                    detailMap[batch[idx].id] = r.value;
+                }
+            });
+        }
+
+        // ★ 3단계: 목록 rows에 상세 사진 필드 머지
+        allDeliveries = listRows.map(d => {
+            const detail = detailMap[d.id];
+            if (!detail) return d;
+            // 사진 관련 필드만 머지 (메타데이터는 목록 데이터 유지)
+            return {
+                ...d,
+                loading_invoice_photo: detail.loading_invoice_photo || null,
+                loading_temp_photo:    detail.loading_temp_photo    || null,
+                loading_extra_photos:  detail.loading_extra_photos  || null,
+                stop_photos:           detail.stop_photos           || null,
+                delivery_invoice_photo: detail.delivery_invoice_photo || null,
+                delivery_temp_photo:   detail.delivery_temp_photo   || null,
+            };
+        });
+
+        const photoCount = allDeliveries.filter(d =>
+            d.loading_invoice_photo || d.loading_temp_photo || d.stop_photos
+        ).length;
+        document.getElementById('galleryTotalBadge').innerHTML =
+            `<i class="fas fa-photo-video"></i> 배송 ${allDeliveries.length}건 (사진 ${photoCount}건)`;
+
     } catch (err) {
         console.error(err);
         document.getElementById('galleryResults').innerHTML = `
@@ -164,25 +212,56 @@ function applyFilter() {
             }
         }
 
-        // 하차 서류 (stops 배열)
+        // ★ 하차 서류: stop_photos 필드에서 추출 (v20250321E 이후 구조)
+        //   stop_photos = JSON {"0":{invoice_photo,temp_photo,...}, "1":{...}}
         let stopsArr = [];
         try { stopsArr = d.stops ? JSON.parse(d.stops) : []; } catch {}
 
-        if (stopsArr.length > 0) {
-            stopsArr.forEach((stop, idx) => {
+        let stopPhotos = {};
+        try { stopPhotos = d.stop_photos ? JSON.parse(d.stop_photos) : {}; } catch {}
+
+        // stop_photos가 있으면 우선 사용, 없으면 stops 배열의 photo 필드 사용 (하위호환)
+        if (Object.keys(stopPhotos).length > 0 || stopsArr.length > 0) {
+            const len = Math.max(Object.keys(stopPhotos).length, stopsArr.length);
+            for (let idx = 0; idx < len; idx++) {
+                const sp   = stopPhotos[String(idx)] || {};
+                const meta = stopsArr[idx] || {};
+                const stopLabel = meta.label || `하차 ${idx+1}`;
+
+                // 거래명세표
+                const invPhoto = sp.invoice_photo || meta.invoice_photo;
+                const invDate  = meta.invoice_date || '';
+                const invTs    = meta.invoice_ts   || sp.invoice_ts;
                 if (!docType || docType === 'delivery' || docType === 'invoice') {
-                    if (stop.invoice_photo && (!dateFrom || (stop.invoice_date||'') >= dateFrom) && (!dateTo || (stop.invoice_date||'') <= dateTo)) {
-                        filteredPhotos.push({ ...baseInfo, photo: stop.invoice_photo, photoType: 'delivery', docKind: 'invoice', dateKey: stop.invoice_date || '', ts: stop.invoice_ts, label: stop.label || `하차 ${idx+1}`, stopLabel: stop.label || `하차 ${idx+1}` });
+                    if (invPhoto && (!dateFrom || invDate >= dateFrom) && (!dateTo || invDate <= dateTo)) {
+                        filteredPhotos.push({ ...baseInfo, photo: invPhoto, photoType: 'delivery', docKind: 'invoice', dateKey: invDate, ts: invTs, label: stopLabel, stopLabel });
                     }
                 }
+
+                // 온도기록지
+                const tmpPhoto = sp.temp_photo || meta.temp_photo;
+                const tmpDate  = meta.temp_date || '';
+                const tmpTs    = meta.temp_ts   || sp.temp_ts;
                 if (!docType || docType === 'delivery' || docType === 'temp') {
-                    if (stop.temp_photo && (!dateFrom || (stop.temp_date||'') >= dateFrom) && (!dateTo || (stop.temp_date||'') <= dateTo)) {
-                        filteredPhotos.push({ ...baseInfo, photo: stop.temp_photo, photoType: 'delivery', docKind: 'temp', dateKey: stop.temp_date || '', ts: stop.temp_ts, label: stop.label || `하차 ${idx+1}`, stopLabel: stop.label || `하차 ${idx+1}` });
+                    if (tmpPhoto && (!dateFrom || tmpDate >= dateFrom) && (!dateTo || tmpDate <= dateTo)) {
+                        filteredPhotos.push({ ...baseInfo, photo: tmpPhoto, photoType: 'delivery', docKind: 'temp', dateKey: tmpDate, ts: tmpTs, label: stopLabel, stopLabel });
                     }
                 }
-            });
+
+                // 추가사진 (extra_photos)
+                const extras = sp.extra_photos || meta.extra_photos || [];
+                if (Array.isArray(extras)) {
+                    extras.forEach(ep => {
+                        if (!ep || !ep.url) return;
+                        const epDate = ep.date || meta.arrived_at?.slice(0,10) || '';
+                        if ((!dateFrom || epDate >= dateFrom) && (!dateTo || epDate <= dateTo)) {
+                            filteredPhotos.push({ ...baseInfo, photo: ep.url, photoType: 'delivery', docKind: 'extra', dateKey: epDate, ts: ep.ts, label: stopLabel, stopLabel });
+                        }
+                    });
+                }
+            }
         } else {
-            // 구버전 하차 호환
+            // 구버전 하차 호환 (delivery_invoice_photo 직접 저장)
             if (!docType || docType === 'delivery' || docType === 'invoice') {
                 if (d.delivery_invoice_photo && (!dateFrom || (d.delivery_invoice_date||'') >= dateFrom) && (!dateTo || (d.delivery_invoice_date||'') <= dateTo)) {
                     filteredPhotos.push({ ...baseInfo, photo: d.delivery_invoice_photo, photoType: 'delivery', docKind: 'invoice', dateKey: d.delivery_invoice_date || '', ts: d.delivery_invoice_ts, label: '하차', stopLabel: null });
@@ -192,6 +271,21 @@ function applyFilter() {
                 if (d.delivery_temp_photo && (!dateFrom || (d.delivery_temp_date||'') >= dateFrom) && (!dateTo || (d.delivery_temp_date||'') <= dateTo)) {
                     filteredPhotos.push({ ...baseInfo, photo: d.delivery_temp_photo, photoType: 'delivery', docKind: 'temp', dateKey: d.delivery_temp_date || '', ts: d.delivery_temp_ts, label: '하차', stopLabel: null });
                 }
+            }
+        }
+
+        // ★ 상차 추가사진 (loading_extra_photos)
+        if (!docType || docType === 'loading' || docType === 'extra') {
+            let loadingExtras = [];
+            try { loadingExtras = d.loading_extra_photos ? JSON.parse(d.loading_extra_photos) : []; } catch {}
+            if (Array.isArray(loadingExtras)) {
+                loadingExtras.forEach(ep => {
+                    if (!ep || !ep.url) return;
+                    const epDate = ep.date || d.loading_invoice_date || '';
+                    if ((!dateFrom || epDate >= dateFrom) && (!dateTo || epDate <= dateTo)) {
+                        filteredPhotos.push({ ...baseInfo, photo: ep.url, photoType: 'loading', docKind: 'extra', dateKey: epDate, ts: ep.ts, label: '상차(추가)', stopLabel: null });
+                    }
+                });
             }
         }
     });
