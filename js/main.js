@@ -102,7 +102,7 @@ function renderRooms(rooms) {
     }
     grid.innerHTML = rooms.map(room => `
         <div class="room-card"
-             onclick="openRoomPassword('${room.id}', '${escapeHtml(room.room_name)}', '${room.password_hash}')">
+             onclick="openRoomPassword('${room.id}', '${escapeHtml(room.room_name)}')">
             <div class="room-card-header">
                 <div class="room-card-name">
                     <i class="fas fa-building"></i>
@@ -138,9 +138,9 @@ function filterRooms(query) {
 }
 
 // ===== 비밀번호 모달 =====
-function openRoomPassword(roomId, roomName, passwordHash) {
+function openRoomPassword(roomId, roomName) {
     pendingRoomId = roomId;
-    pendingPasswordHash = passwordHash;
+    pendingPasswordHash = null; // 서버에서 직접 조회하므로 더 이상 HTML에서 받지 않음
     document.getElementById('roomPasswordTitle').textContent = roomName;
     document.getElementById('enterPassword').value = '';
     hideError('passwordError');
@@ -160,8 +160,14 @@ async function handlePasswordConfirm() {
     await new Promise(r => setTimeout(r, 300));
 
     try {
+        // ★ 보안 개선: password_hash를 HTML에 노출하지 않고 서버에서 직접 조회해 비교
+        const room = await apiGet(`tables/rooms/${pendingRoomId}`);
+        if (!room || !room.password_hash) {
+            showError('passwordError', '룸 정보를 불러올 수 없습니다.');
+            return;
+        }
         const hash = await hashPassword(pw);
-        if (hash === pendingPasswordHash) {
+        if (hash === room.password_hash) {
             Session.set(`room_auth_${pendingRoomId}`, {
                 authenticated: true,
                 roomId: pendingRoomId,

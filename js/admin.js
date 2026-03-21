@@ -148,17 +148,19 @@ function showAdminMain() {
 // ===== 통계 로드 =====
 async function loadAdminStats() {
     try {
+        // ★ limit=1로 total 카운트만 조회 (대량 데이터 불러오기 방지)
         const [roomData, delivData] = await Promise.all([
             apiGet('tables/rooms?limit=1'),
-            apiGetList('tables/deliveries?limit=1000')
+            apiGetList('tables/deliveries?limit=500')
         ]);
 
         const deliveries = delivData.data || [];
+        const total     = delivData.total || deliveries.length; // 서버 전체 건수
         const active    = deliveries.filter(d => d.status === 'transit' || d.status === 'loading').length;
         const completed = deliveries.filter(d => d.status === 'delivered').length;
 
         document.getElementById('aTotalRooms').textContent          = roomData.total || 0;
-        document.getElementById('aTotalDeliveries').textContent     = deliveries.length;
+        document.getElementById('aTotalDeliveries').textContent     = total;
         document.getElementById('aActiveDeliveries').textContent    = active;
         document.getElementById('aCompletedDeliveries').textContent = completed;
     } catch (err) { console.error('통계 로드 오류:', err); }
@@ -262,7 +264,13 @@ async function handleSaveRoom(e) {
         if (pw) data.password_hash = await hashPassword(pw);
 
         if (id) {
-            await apiPut(`tables/rooms/${id}`, { ...allRooms.find(r => r.id === id), ...data });
+            // ★ 캐시(allRooms)가 오래됐을 수 있으므로 서버에서 최신 데이터를 직접 조회 후 병합
+            // → 비밀번호 필드가 캐시 값으로 덮어씌워지는 버그 방지
+            const currentRoom = await apiGet(`tables/rooms/${id}`);
+            // 시스템 필드 제거
+            ['id','gs_project_id','gs_table_name','created_at','updated_at'].forEach(f => delete currentRoom[f]);
+            // pw 미입력 시 기존 password_hash 유지 (data에 password_hash 없으면 currentRoom 값 사용)
+            await apiPut(`tables/rooms/${id}`, { ...currentRoom, ...data });
             showToast('룸이 수정되었습니다.', 'success');
         } else {
             if (!pw) { showToast('비밀번호를 입력해주세요.', 'error'); return; }
@@ -543,6 +551,12 @@ function startAdminNotifPoll() {
             if (rows.length === 0) return;
             adminLastNotifAt = Math.max(...rows.map(n => Number(n.created_at) || 0));
             rows.reverse();
+            // ★ 알림음 재생 (이벤트 유형별)
+            const hasUrgent  = rows.some(n => ['low_speed_alert','loaded_timeout'].includes(n.event_type));
+            const hasWarning = rows.some(n => ['stop_arrived'].includes(n.event_type));
+            if (hasUrgent) playNotifSound('urgent');
+            else if (hasWarning) playNotifSound('warning');
+            else playNotifSound('info');
             rows.forEach(n => showAdminNotifToast(n));
             updateAdminNotifBadge(rows.length);
             addAdminNotifItems(rows);

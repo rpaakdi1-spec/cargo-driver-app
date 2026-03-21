@@ -134,7 +134,8 @@ async function handleGatePassword() {
 
     try {
         const hash = await hashPassword(pw);
-        if (hash === roomData.password_hash) {
+        const fallbackHash = _fallbackHash(pw + '_cargo_salt_2025'); // ★ WebView/HTTP 환경 폴백 해시 추가
+        if (hash === roomData.password_hash || fallbackHash === roomData.password_hash) {
             Session.set(`room_auth_${roomId}`, {
                 authenticated: true,
                 roomId: roomId,
@@ -156,7 +157,8 @@ async function handleGatePassword() {
 // ===== 배송 목록 로드 =====
 async function loadDeliveries() {
     try {
-        const data = await apiGetList(`tables/deliveries?limit=200&sort=created_at`);
+        // ★ limit=500으로 올려 배송건 누락 방지 (200이면 오래된 배송건 잠자일 수 있음)
+        const data = await apiGetList(`tables/deliveries?limit=500&sort=created_at`);
         deliveries = (data.data || []).filter(d => d.room_id === roomId);
         updateStats();
         renderDeliveries();
@@ -567,6 +569,15 @@ async function requestPhotoFromDriver(deliveryId, reqType, btn) {
             btn.style.background = '#dcfce7';
             btn.style.color = '#16a34a';
             btn.style.borderColor = '#86efac';
+            // ★ 3초 후 버튼 복구 (재요청 가능하게)
+            setTimeout(() => {
+                if (!btn) return;
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-camera"></i> 재요청';
+                btn.style.background = '';
+                btn.style.color = '';
+                btn.style.borderColor = '';
+            }, 3000);
         }
     } catch {
         showToast('요청 전송 실패. 다시 시도해주세요.', 'error');
@@ -939,6 +950,12 @@ function startRoomNotifPoll() {
             if (rows.length === 0) return;
             roomLastNotifAt = Math.max(...rows.map(n => Number(n.created_at) || 0));
             rows.reverse();
+            // ★ 알림음 재생 (이벤트 유형별)
+            const hasUrgent = rows.some(n => ['low_speed_alert','loaded_timeout'].includes(n.event_type));
+            const hasWarning = rows.some(n => ['stop_arrived'].includes(n.event_type));
+            if (hasUrgent) playNotifSound('urgent');
+            else if (hasWarning) playNotifSound('warning');
+            else playNotifSound('info');
             rows.forEach(n => showRoomNotifToast(n));
             updateRoomNotifBadge(rows.length);
             addRoomNotifItems(rows);

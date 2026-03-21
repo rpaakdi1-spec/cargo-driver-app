@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css?v=20250314J">
-    <link rel="stylesheet" href="css/driver.css?v=20250320P">
+    <link rel="stylesheet" href="css/driver.css?v=20250321B">
     <style>
         @keyframes fadeInDown {
             from { transform: translateY(-100%); opacity: 0; }
@@ -276,7 +276,24 @@
 
     <div class="toast" id="toast"></div>
 
-    <script src="js/utils.js?v=20250320P"></script>
-    <script src="js/driver.js?v=20250320P"></script>
+    <!-- ★ 라이트박스 (추가사진 확대보기) -->
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()"
+         style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.9);
+                align-items:center;justify-content:center;flex-direction:column;">
+        <button onclick="closeLightbox()"
+                style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.15);
+                       border:none;color:#fff;font-size:1.4rem;width:40px;height:40px;
+                       border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+            <i class="fas fa-times"></i>
+        </button>
+        <img id="lightboxImg" src="" alt="사진 확대보기"
+             style="max-width:95vw;max-height:85vh;object-fit:contain;border-radius:8px;"
+             onclick="event.stopPropagation()" />
+        <p id="lightboxCaption"
+           style="color:#e2e8f0;margin-top:12px;font-size:0.85rem;text-align:center;padding:0 16px;"></p>
+    </div>
+
+    <script src="js/utils.js?v=20250321B"></script>
+    <script src="js/driver.js?v=20250321B"></script>
 </body>
 </html>

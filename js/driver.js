@@ -1,6 +1,6 @@
 /* ===========================
    기사 페이지 JS - driver.js
-   v20250320P
+   v20250321B
    - 촬영 즉시 자동업로드
    - 수정 버튼 (재촬영)
    - GPS 지속 유지 + 자동 재시도
@@ -31,6 +31,9 @@ let wakeLock = null;
 let bgGpsInterval = null;
 let bgGpsSeconds  = 0;
 let isBackground  = false;
+
+// ★ 파일선택(카메라/갤러리)이 열려있을 때 visibilitychange로 GPS가 재시작되지 않도록 플래그
+let filePickerOpen = false;
 
 // ★ GPS 위치 요청 폴링 (화주가 요청 시 즉시 전송)
 let gpsRequestPollTimer = null;
@@ -77,8 +80,11 @@ function lsClearAll()  { localStorage.removeItem(LS_SESSION); localStorage.remov
    초기화
    ===================== */
 document.addEventListener('DOMContentLoaded', async () => {
-    // ★ 알림 권한 요청 (차단되지 않은 경우에만)
-    if ('Notification' in window && Notification.permission === 'default') {
+    // ★ 알림 권한 요청 — 네이티브 앱(AndroidGPS 브릿지)이면 호출하지 않음
+    // (WebView에서 Notification.requestPermission()을 호출하면 시스템 알림이 기사 앱에 뜨는 문제)
+    if ('Notification' in window &&
+        Notification.permission === 'default' &&
+        !(window.AndroidGPS && typeof window.AndroidGPS.isNativeApp === 'function')) {
         Notification.requestPermission();
     }
 
@@ -162,13 +168,19 @@ document.addEventListener('visibilitychange', () => {
         // 백그라운드로 전환됨
         isBackground = true;
         startBgCounter();
-        // Wake Lock은 백그라운드에서 자동 해제됨 (브라우저 정책)
-        // GPS watchPosition은 백그라운드에서도 대부분 유지됨
 
     } else if (document.visibilityState === 'visible') {
         // 포그라운드로 복귀
         isBackground = false;
         stopBgCounter();
+
+        // ★ 파일 선택(카메라/갤러리)으로 인한 복귀면 GPS 재시작 건너뜀
+        // filePickerOpen은 change 이벤트에서만 false로 변경 (여기서 리셋하면 change보다 먼저 실행돼 업로드 방해)
+        if (filePickerOpen) {
+            // Wake Lock만 재획득하고 GPS 재시작은 건너뜀
+            if (gpsKeepAlive) requestWakeLock();
+            return;
+        }
 
         if (gpsKeepAlive) {
             // GPS watchId가 살아있어도 일부 브라우저에서 중단되므로 무조건 재시작
@@ -187,7 +199,9 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // ★ iOS Safari: 페이지 재활성화 시 GPS 재시작 (visibilitychange 미지원 경우 대비)
+// filePickerOpen 중에는 GPS 재시작 건너뜀
 window.addEventListener('pageshow', (e) => {
+    if (filePickerOpen) return; // 카메라/갤러리 복귀 시 건너뜀
     if (gpsKeepAlive && gpsWatchId === null) {
         clearGpsRetry();
         startGPS();
@@ -336,7 +350,8 @@ async function handlePinLogin(e) {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 확인 중...';
 
     try {
-        const data    = await apiGetList('tables/deliveries?limit=200');
+        // ★ limit=500으로 올려 배송건 누락 방지 (200이면 오래된 배송건 잘릴 수 있음)
+        const data    = await apiGetList('tables/deliveries?limit=500');
         const all     = data.data || [];
         const pinHash         = await hashPassword(pin);
         const pinHashFallback = _fallbackHash(pin + '_cargo_salt_2025');
@@ -546,20 +561,30 @@ function renderWorkScreen() {
 
 // ===== 화물 타입 헬퍼 — utils.js의 공통 함수 사용 (isColdType, getCargoTypeLabel, getCargoTypeBg, getCargoTypeColor, cargoTypeBadge) =====
 
-// 온도기록지 카드에 냉동/냉장 안내 배지 업데이트
+// 온도기록지 카드에 냉동/냉장 안내 배지 추가 (상차 + 모든 하차 stop)
 function refreshTempCardNotice() {
     const d = currentDelivery;
     if (!d || !isColdType(d.cargo_type)) return;
 
-    // 상차 온도기록지 카드
-    const loadingCard = document.getElementById('loadingTempCard');
-    if (loadingCard && !loadingCard.querySelector('.ab-temp-notice')) {
+    const NOTICE_HTML = '<i class="fas fa-thermometer-full" style="color:#f59e0b;"></i> AB온도 확인 필수<br><span style="font-weight:400;font-size:0.72rem;">온도기록지에 A·B 온도 기재 여부를 확인하세요</span>';
+    const NOTICE_STYLE = 'margin-top:6px;padding:5px 8px;background:#fef3c7;border-radius:7px;font-size:0.76rem;color:#92400e;font-weight:600;text-align:center;line-height:1.4;border:1px solid #fde68a;';
+
+    function addNotice(card) {
+        if (!card || card.querySelector('.ab-temp-notice')) return;
         const notice = document.createElement('div');
         notice.className = 'ab-temp-notice';
-        notice.style.cssText = 'margin-top:6px;padding:5px 8px;background:#fef3c7;border-radius:7px;font-size:0.76rem;color:#92400e;font-weight:600;text-align:center;line-height:1.4;border:1px solid #fde68a;';
-        notice.innerHTML = '<i class="fas fa-thermometer-full" style="color:#f59e0b;"></i> AB온도 확인 필수<br><span style="font-weight:400;font-size:0.72rem;">온도기록지에 A·B 온도 기재 여부를 확인하세요</span>';
-        loadingCard.appendChild(notice);
+        notice.style.cssText = NOTICE_STYLE;
+        notice.innerHTML = NOTICE_HTML;
+        card.appendChild(notice);
     }
+
+    // 상차 온도기록지 카드
+    addNotice(document.getElementById('loadingTempCard'));
+
+    // 하차 stop 온도기록지 카드 (stops 배열 기준으로 모든 stop에 적용)
+    stops.forEach((_, idx) => {
+        addNotice(document.getElementById(`stopTmpCard_${idx}`));
+    });
 }
 
 // 온도기록지 업로드 완료 시 AB온도 확인 강조 팝업
@@ -595,12 +620,18 @@ function setupLoadingPhotoInput(type) {
     if (!input) return;
     if (input._handlerBound) return; // 이미 바인딩됨
     input._handlerBound = true;
+    // ★ 파일 선택창이 열릴 때 플래그 설정 (visibilitychange GPS 재시작 방지)
+    input.addEventListener('click', () => { filePickerOpen = true; }, { passive: true });
     input.addEventListener('change', async function () {
+        filePickerOpen = false; // 선택 완료 또는 취소
         if (!this.files || !this.files[0]) return;
+        // ★ await 전에 파일 참조 저장 (WebView에서 this.files가 사라지는 문제 방지)
+        const file = this.files[0];
+        this.value = ''; // 동일 파일 재선택 가능하도록
         const previewId = type === 'invoice' ? 'loadingInvoicePreview' : 'loadingTempPreview';
         showUploadingSpinner(previewId);
         try {
-            const imgValue = await uploadImage(this.files[0]);
+            const imgValue = await uploadImage(file);
             await uploadLoadingPhoto(type, imgValue);
         } catch (err) {
             console.error(err);
@@ -665,7 +696,12 @@ function triggerLoadingRePhoto(type) {
     const input   = document.getElementById(inputId);
     if (!input) return;
     input.value = '';
+    // ★ 핸들러 재바인딩을 위해 플래그 리셋
+    input._handlerBound = false;
     setupLoadingPhotoInput(type);
+    // ★ 파일 선택창 바로 열기
+    filePickerOpen = true;
+    input.click();
 }
 
 /* ★ 파일 input 직접 트리거 (label for 대체 — WebView 호환) */
@@ -684,11 +720,12 @@ async function markLoaded() {
     if (!currentDelivery) return;
     if (!confirm('상차 완료 처리하시겠습니까?')) return;
     try {
+        const loadedAt = Date.now(); // ★ 동일한 타임스탬프 사용
         await apiPatch(`tables/deliveries/${currentDelivery.id}`, {
-            status: 'loading', loaded_at: Date.now()
+            status: 'loading', loaded_at: loadedAt
         });
-        currentDelivery.status = 'loading';
-        currentDelivery.loaded_at = Date.now();
+        currentDelivery.status    = 'loading';
+        currentDelivery.loaded_at = loadedAt;
         updateStatusDisplay('loading');
         showToast('상차 완료! 네비를 켜세요 — GPS는 백그라운드에서 계속 전송됩니다.', 'success');
 
@@ -956,12 +993,18 @@ function bindStopInput(idx, type) {
     const input   = document.getElementById(inputId);
     if (!input || input._handlerBound) return;
     input._handlerBound = true;
+    // ★ 카메라/갤러리 선택창 열릴 때 플래그 ON
+    input.addEventListener('click', () => { filePickerOpen = true; }, { passive: true });
     input.addEventListener('change', async function () {
+        // ★ 파일 선택이 이뤄졌으니 플래그 OFF
+        filePickerOpen = false;
         if (!this.files || !this.files[0]) return;
+        const file = this.files[0];
+        this.value = ''; // 동일파일 재선택 가능하도록
         const prevId = type === 'invoice' ? `stopInvPreview_${idx}` : `stopTmpPreview_${idx}`;
         showUploadingSpinner(prevId);
         try {
-            const imgValue = await uploadImage(this.files[0]);
+            const imgValue = await uploadImage(file);
             stops[idx][type === 'invoice' ? 'invoice_photo' : 'temp_photo'] = imgValue;
             await uploadStopPhoto(idx, type);
         } catch (err) {
@@ -1006,7 +1049,7 @@ async function uploadStopPhoto(idx, type) {
                 <button class="btn btn-outline btn-sm edit-photo-btn" onclick="triggerStopRePhoto(${idx},'${type}')">
                     <i class="fas fa-redo"></i> 수정
                 </button>
-                <input type="file" id="${inputId}" accept="image/*" capture="environment" style="display:none;" />
+                <input type="file" id="${inputId}" accept="image/*" style="display:none;" />
             `;
             bindStopInput(idx, type);
         }
@@ -1025,10 +1068,13 @@ function triggerStopRePhoto(idx, type) {
     const inputId = type === 'invoice' ? `stopInvInput_${idx}` : `stopTmpInput_${idx}`;
     const input   = document.getElementById(inputId);
     if (!input) return;
-    input.dataset.bound = '';
+    // ★ 핸들러 재바인딩을 위해 플래그 리셋
+    input._handlerBound = false;
     input.value = '';
     bindStopInput(idx, type);
-    triggerPhotoInput(inputId);
+    // ★ 파일 선택창 바로 열기
+    filePickerOpen = true;
+    input.click();
 }
 
 function updateStopLabel(idx, val) {
@@ -1166,9 +1212,9 @@ function handleFullLogout() {
     if (ne) ne.value = '';
     if (ce) ce.value = '';
     const form = document.getElementById('driverPinForm');
-    if (form) form.dataset.bound = '';
+    if (form) form.dataset.bound = ''; // ★ 플래그 초기화로 재바인딩 가능하게
     showToast('로그아웃되었습니다.', 'default');
-    showPinSection();
+    showPinSection(); // ★ showPinSection 내부에서 initPinEventListeners() 재호출됨
 }
 
 /* ================================================
@@ -1601,13 +1647,16 @@ function bindExtraPhotoInput(section) {
     const input   = document.getElementById(inputId);
     if (!input || input._handlerBound) return;
     input._handlerBound = true;
+    // ★ 파일 선택창이 열릴 때 플래그 설정 (visibilitychange GPS 재시작 방지)
+    input.addEventListener('click', () => { filePickerOpen = true; }, { passive: true });
     input.addEventListener('change', async function () {
+        filePickerOpen = false; // 선택 완료
         if (!this.files || !this.files.length) return;
         const files = Array.from(this.files);
+        this.value = ''; // 동일파일 재선택 가능하도록
         for (const file of files) {
             await uploadOneExtraPhoto(section, file);
         }
-        this.value = '';
     });
 }
 
@@ -1872,21 +1921,8 @@ async function sendDriverNotification(eventType, stopIdx = null) {
         console.warn('[sendDriverNotification] 알림 전송 실패(무시):', e.message);
     }
 
-    // ★ 네이티브 앱이면 AndroidGPS.showNotification() 으로 푸시 알림 표시
-    // (Web Notification API는 WebView에서 차단되므로 네이티브 브릿지 사용)
-    if (window.AndroidGPS && typeof window.AndroidGPS.showNotification === 'function') {
-        const titles = {
-            driver_login:    '기사 접속',
-            loaded:          '상차 완료',
-            delivered:       '하차 완료',
-            low_speed_alert: '저속 주행 경고',
-            loaded_timeout:  '상차 시간 초과',
-            stop_arrived:    '하차지 도착'
-        };
-        try {
-            window.AndroidGPS.showNotification(titles[eventType] || '화물운송', msg);
-        } catch(e) {
-            console.warn('[showNotification] 네이티브 알림 실패(무시):', e.message);
-        }
-    }
+    // ★ NOTE: 기사 앱에서는 네이티브 알림을 띄우지 않음.
+    // sendDriverNotification은 화주/관리자용 알림 DB 기록 전송이 목적이며,
+    // 화주/관리자 페이지(room.js, admin.js)의 폴링이 해당 알림을 토스트로 표시함.
+    // (기사 앱 자신에게 푸시 알림을 보내면 기사가 자기 행동 알림을 받게 되는 문제 발생)
 }

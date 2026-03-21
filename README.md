@@ -1,6 +1,6 @@
 # 화물운송 관리 시스템 — 사용방법 완전 가이드
 
-> **버전**: v20250320P | **최종 수정**: 2025-03-20
+> **버전**: v20250320V | **최종 수정**: 2025-03-21
 
 ---
 
@@ -405,6 +405,14 @@ UVIS 서버 업로드 시도
 
 | 버전 | 날짜 | 주요 변경 내용 |
 |------|------|----------------|
+| **v20250321B** | 2025-03-21 | **전체 코드 점검 및 일괄 수정** ① `driver.html` — lightbox DOM 누락으로 추가사진 확대보기 불가 → lightbox 추가 ② `utils.js` — `fileToBase64` 이중 resolve 경쟁(img.onload/reader.onload) 수정, settled 플래그로 안전하게 처리; `openLightbox/closeLightbox`에 `display` 스타일 직접 제어 추가 ③ `driver.js` — `markLoaded`의 `loaded_at` 타임스탬프 불일치 수정(동일 변수 사용); `handleFullLogout` 재로그인 시 PIN 폼 이벤트 재바인딩 되도록 주석 명확화; 버전 주석 갱신 ④ `room.js` — `loadDeliveries` limit 200→500; `handleGatePassword` 폴백 해시 검증 추가(HTTP/WebView 환경 대응) ⑤ `admin.js` — 통계 조회 limit 1000→500, `total` 서버 필드 활용으로 전체 건수 정확히 표시 |
+| **v20250321A** | 2025-03-21 | **사진업로드 최종 수정**: `setupLoadingPhotoInput`에서 `this.files[0]` await 전 지역변수 저장·`input.value=''` 추가, `triggerLoadingRePhoto`·`triggerStopRePhoto` 재촬영 시 `_handlerBound` 리셋 및 `filePickerOpen` 설정, `pageshow` 이벤트에 `filePickerOpen` 가드 추가. **알림음 수정**: `utils.js` AudioContext `suspended` 상태 시 `resume()` 후 재생 + 첫 클릭/터치 시 AudioContext 활성화 로직 추가(브라우저 자동재생 정책 대응) |
+| **v20250320V** | 2025-03-21 | **배포 전 기능 전체 테스트**: gallery.html utils.js 버전 동기화(I→U), **보안개선** — index.html이 `password_hash`를 HTML onclick에 직접 노출하던 문제 수정(서버 직접 조회 방식으로 전환), 전체 페이지 버전 U로 일관화 |
+| **v20250320U** | 2025-03-20 | 기사 PIN 불일치 방지: `apiPatch` PUT fallback 직렬화 큐(`_patchQueue`) race condition 차단, 로그인 배송건 limit 200→500 |
+| **v20250320T** | 2025-03-20 | 고객사 상준 비밀번호 덮어쓰기 버그 수정(`handleSaveRoom` 서버 최신 데이터 조회 후 병합 PUT) |
+| **v20250320S** | 2025-03-20 | PATCH 405 근본 해결(`_patchSupported` 플래그), 쳐영요청 버튼 3초 후 '재요청'으로 복구, room.js/admin.js Web Audio API 알림음 추가 |
+| **v20250320R** | 2025-03-20 | 알림 스키팁(네이티브앱 감지시 `requestPermission` 미호출), 카메라 업로드 실패 수정(`filePickerOpen` 리셋 위치 변경), 하차 온도기록지 AB온도 배지 추가 |
+| **v20250320Q** | 2025-03-20 | 알림 오발송 수정(기사 앱→화주 방향만 유지), 카메라 선택 후 GPS 재연결 토스트 방지(`filePickerOpen` 플래그) |
 | **v20250320P** | 2025-03-20 | **APK 업데이트 필수** — `onShowFileChooser` 구현(사진 촬영/선택 정상화), 카메라·알림 권한 추가, Android 13+ `POST_NOTIFICATIONS` 요청, `FileProvider` 설정, 네이티브 푸시 알림(`showNotification()`) 추가, driver.js와 네이티브 알림 브릿지 연동 |
 | **v20250320O** | 2025-03-20 | 사진 입력 CSS 오버레이 방식 재설계, cloneNode 제거, 상차완료 복원 시 취소 버튼 표시 수정, 알림 권한 요청 코드 추가 |
 | **v20250320N** | 2025-03-20 | 배송건 삭제 시 앱 자동 초기화, label for 방식 개선 |

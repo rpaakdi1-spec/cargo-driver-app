@@ -68,6 +68,72 @@ function togglePassword(inputId) {
     }
 }
 
+// ===== 알림음 (Web Audio API — 외부 파일 없이 비프음 생성) =====
+/**
+ * playNotifSound(type)
+ *  type: 'info'    — 기본 알림 (낮은 단음)
+ *        'warning' — 경고 알림 (빠른 2비프)
+ *        'urgent'  — 긴급 알림 (3비프 상승)
+ */
+let _audioCtx = null;
+function _getAudioCtx() {
+    if (!_audioCtx) {
+        try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+    }
+    return _audioCtx;
+}
+
+// ★ 사용자 첫 인터랙션(클릭/터치)에서 AudioContext를 활성화
+// 브라우저 자동재생 정책: 제스처 없이는 suspended 상태
+(function _initAudioOnInteraction() {
+    const _resume = () => {
+        const ctx = _getAudioCtx();
+        if (ctx && ctx.state === 'suspended') {
+            ctx.resume().catch(() => {});
+        }
+    };
+    document.addEventListener('click',      _resume, { once: false, passive: true });
+    document.addEventListener('touchstart', _resume, { once: false, passive: true });
+    document.addEventListener('keydown',    _resume, { once: false, passive: true });
+})();
+
+function playNotifSound(type = 'info') {
+    const ctx = _getAudioCtx();
+    if (!ctx) return;
+    // ★ suspended 상태면 resume 후 재생
+    if (ctx.state === 'suspended') {
+        ctx.resume().then(() => _playBeeps(ctx, type)).catch(() => {});
+        return;
+    }
+    _playBeeps(ctx, type);
+}
+
+function _playBeeps(ctx, type) {
+    const beepConfigs = {
+        info:    [{ freq: 880, start: 0,    dur: 0.15 }],
+        warning: [{ freq: 660, start: 0,    dur: 0.12 }, { freq: 880, start: 0.18, dur: 0.12 }],
+        urgent:  [{ freq: 660, start: 0,    dur: 0.1  }, { freq: 880, start: 0.15, dur: 0.1  }, { freq: 1100, start: 0.30, dur: 0.18 }]
+    };
+
+    const beeps = beepConfigs[type] || beepConfigs.info;
+    const now   = ctx.currentTime;
+
+    beeps.forEach(({ freq, start, dur }) => {
+        const osc  = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.type      = 'sine';
+        osc.frequency.setValueAtTime(freq, now + start);
+        gain.gain.setValueAtTime(0.4,  now + start);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + start + dur);
+
+        osc.start(now + start);
+        osc.stop(now + start + dur + 0.05);
+    });
+}
+
 // ===== Toast 알림 =====
 function showToast(message, type = 'default', duration = 3000) {
     const toast = document.getElementById('toast');
@@ -310,34 +376,58 @@ async function apiPut(url, data) {
     return res.json();
 }
 
-// PATCH — 서버가 PATCH를 지원하면 직접 전송, 아니면 GET 후 머지 PUT
+// PATCH — 서버가 PATCH를 지원하면 직접 전송, 아니면 PUT으로 폴백
+// ★ 405가 반복되면 PATCH 시도를 건너뛰고 즉시 PUT 폴백
+// ★ PUT 폴백은 직렬화 큐로 race condition 방지
+let _patchSupported = true; // 한번 405 확인되면 false로 전환
+let _patchQueue     = Promise.resolve(); // 직렬화 큐
+
 async function apiPatch(url, data) {
-    // 1차: PATCH 직접 시도
-    try {
-        const res = await fetch(url, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        if (res.ok) return res.json();
-        // PATCH 미지원(405) 이외의 오류는 throw
-        if (res.status !== 405 && res.status !== 404) {
-            throw new Error(`API Error: ${res.status}`);
+    // 1차: PATCH 직접 시도 (서버가 지원하는 경우)
+    if (_patchSupported) {
+        try {
+            const res = await fetch(url, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (res.ok) return res.json();
+            if (res.status === 405) {
+                // 이 서버는 PATCH 미지원 — 이후 모든 요청은 PUT 폴백 사용
+                _patchSupported = false;
+                console.warn('[apiPatch] 서버가 PATCH를 지원하지 않음. PUT 폴백으로 전환합니다.');
+            } else {
+                throw new Error(`API Error: ${res.status}`);
+            }
+        } catch (e) {
+            if (!e.message.startsWith('API Error')) throw e;
         }
-    } catch (e) {
-        if (!e.message.includes('405') && !e.message.includes('fetch')) throw e;
     }
 
-    // 2차: PATCH 미지원 → GET 후 머지 PUT (사진 필드 재로딩 최소화)
-    const current = await apiGet(url);
-    const merged = { ...current, ...data };
-    const res2 = await fetch(url, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(merged)
+    // 2차: PUT 폴백 — GET 후 데이터 병합하여 PUT
+    // ★ 같은 URL에 대한 동시 PUT fallback은 직렬화 큐로 처리 (race condition 방지)
+    // 여러 apiPatch가 동시에 같은 레코드를 GET→PUT 하면 서로 덮어쓸 수 있음
+    return new Promise((resolve, reject) => {
+        _patchQueue = _patchQueue.then(async () => {
+            try {
+                const current = await apiGet(url);
+                // 시스템 필드 제거 (서버가 관리하는 필드)
+                const systemFields = ['id', 'gs_project_id', 'gs_table_name', 'created_at', 'updated_at'];
+                systemFields.forEach(f => delete current[f]);
+
+                const merged = { ...current, ...data };
+                const res2 = await fetch(url, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(merged)
+                });
+                if (!res2.ok) throw new Error(`API Error (PUT fallback): ${res2.status}`);
+                resolve(await res2.json());
+            } catch(e) {
+                reject(e);
+            }
+        });
     });
-    if (!res2.ok) throw new Error(`API Error: ${res2.status}`);
-    return res2.json();
 }
 
 async function apiDelete(url) {
@@ -347,38 +437,44 @@ async function apiDelete(url) {
 }
 
 // ===== 이미지를 Base64로 변환 (리사이즈 포함) =====
+// ★ img.onload에서만 resolve, img.onerror 시 FileReader fallback (중복 resolve 방지)
 function fileToBase64(file) {
     return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = e => resolve(e.target.result);
-        reader.onerror = reject;
+        let settled = false;
+        const done = (val) => { if (!settled) { settled = true; resolve(val); } };
+        const fail = (e)  => { if (!settled) { settled = true; reject(e); } };
 
         // 이미지 리사이즈 (최대 1024px, 품질 80%)
         const img = new Image();
+        const objectUrl = URL.createObjectURL(file);
+
         img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const MAX = 1024;
-            let { width, height } = img;
-
-            if (width > MAX || height > MAX) {
-                if (width > height) {
-                    height = Math.round(height * MAX / width);
-                    width = MAX;
-                } else {
-                    width = Math.round(width * MAX / height);
-                    height = MAX;
+            URL.revokeObjectURL(objectUrl); // 메모리 해제
+            try {
+                const canvas = document.createElement('canvas');
+                const MAX = 1024;
+                let { width, height } = img;
+                if (width > MAX || height > MAX) {
+                    if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
+                    else               { width  = Math.round(width  * MAX / height); height = MAX; }
                 }
-            }
-
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL('image/jpeg', 0.8));
+                canvas.width  = width;
+                canvas.height = height;
+                canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                done(canvas.toDataURL('image/jpeg', 0.8));
+            } catch (e) { fail(e); }
         };
 
-        img.onerror = () => reader.readAsDataURL(file);
-        img.src = URL.createObjectURL(file);
+        img.onerror = () => {
+            URL.revokeObjectURL(objectUrl);
+            // Canvas 실패 시 FileReader fallback
+            const reader = new FileReader();
+            reader.onload  = e => done(e.target.result);
+            reader.onerror = fail;
+            reader.readAsDataURL(file);
+        };
+
+        img.src = objectUrl;
     });
 }
 
@@ -563,13 +659,18 @@ function openLightbox(src, caption) {
 
     img.src = src;
     if (cap) cap.textContent = caption || '';
+    // ★ classList.add('active') 방식과 인라인 display 모두 지원
     lb.classList.add('active');
+    lb.style.display = 'flex';
     document.body.style.overflow = 'hidden';
 }
 
 function closeLightbox() {
     const lb = document.getElementById('lightbox');
-    if (lb) lb.classList.remove('active');
+    if (lb) {
+        lb.classList.remove('active');
+        lb.style.display = 'none';
+    }
     document.body.style.overflow = '';
 }
 
