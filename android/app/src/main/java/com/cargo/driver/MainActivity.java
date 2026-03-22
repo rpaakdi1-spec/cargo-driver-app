@@ -184,7 +184,7 @@ public class MainActivity extends AppCompatActivity {
         s.setAllowContentAccess(true);         // Content URI 접근
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         s.setUserAgentString(s.getUserAgentString() + " CargoDriverApp/1.0");
-        s.setCacheMode(WebSettings.LOAD_NO_CACHE); // ★ 항상 최신 JS 로드 (캐시 무시)
+        s.setCacheMode(WebSettings.LOAD_DEFAULT); // 기본 캐시 모드 — LOAD_NO_CACHE는 fetch 차단 가능성
 
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
 
@@ -195,10 +195,13 @@ public class MainActivity extends AppCompatActivity {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest req) {
-                String url = req.getUrl().toString();
-                if (url.startsWith("http") && !url.contains("gensparksite.com")) {
-                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-                    return true;
+                // ★ fetch/XHR은 절대 가로채지 않음 — 네비게이션(링크 클릭)만 처리
+                if (req.isForMainFrame()) {
+                    String url = req.getUrl().toString();
+                    if (url.startsWith("http") && !url.contains("gensparksite.com")) {
+                        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                        return true;
+                    }
                 }
                 return false;
             }

@@ -1,6 +1,6 @@
 /* ===========================
    기사 페이지 JS - driver.js
-   v20250321AD
+   v20250321AF
    - 촬영 즉시 자동업로드
    - 수정 버튼 (재촬영)
    - GPS 지속 유지 + 자동 재시도
@@ -126,15 +126,8 @@ function lsClearAll()  { localStorage.removeItem(LS_SESSION); localStorage.remov
    초기화
    ===================== */
 document.addEventListener('DOMContentLoaded', async () => {
-    // ★ 로그인 버튼 이벤트 등록 — onclick 속성(HTML)이 기본 동작,
-    //    addEventListener는 이중 보증용 (중복 실행은 _loginInProgress 플래그로 차단)
-    const loginBtn = document.getElementById('btnDoLogin');
-    if (loginBtn) {
-        loginBtn.addEventListener('click', handlePinLogin);
-        console.log('[driver] 로그인 버튼 이벤트 등록 완료');
-    } else {
-        console.error('[driver] btnDoLogin 엘리먼트를 찾을 수 없습니다!');
-    }
+    // ★ 로그인 버튼 최초 등록
+    _bindLoginBtn();
     // ★ 알림 권한 요청 — 네이티브 앱(AndroidGPS 브릿지)이면 호출하지 않음
     // (WebView에서 Notification.requestPermission()을 호출하면 시스템 알림이 기사 앱에 뜨는 문제)
     if ('Notification' in window &&
@@ -165,26 +158,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // 1) 기존 sessionStorage 세션 유지 (동일 탭 내)
-    const sessionSaved = Session.get('driver_session');
-    if (sessionSaved && sessionSaved.driverName && (Date.now() - sessionSaved.timestamp < 12 * 60 * 60 * 1000)) {
-        currentDriverName = sessionSaved.driverName;
-        // ★ 서버에서 배송건 재확인 (방 삭제 / 배송건 삭제 감지)
-        const valid = await verifyDriverSession(sessionSaved.driverName, sessionSaved.pinHash);
-        if (!valid) return; // verifyDriverSession 내부에서 로그아웃 처리
-        await restoreWorkOrShowSelect();
-        return;
-    }
-    // 2) localStorage 세션 복원 (탭 닫고 재접속)
-    const lsSaved = lsGetSession();
-    if (lsSaved && lsSaved.driverName && (Date.now() - lsSaved.timestamp < 12 * 60 * 60 * 1000)) {
-        currentDriverName = lsSaved.driverName;
-        // ★ 서버에서 배송건 재확인 (방 삭제 / 배송건 삭제 감지)
-        const valid = await verifyDriverSession(lsSaved.driverName, lsSaved.pinHash);
-        if (!valid) return; // verifyDriverSession 내부에서 로그아웃 처리
-        // sessionStorage에도 동기화
-        Session.set('driver_session', { driverName: lsSaved.driverName, pinHash: lsSaved.pinHash, timestamp: Date.now() });
-        await restoreWorkOrShowSelect();
-        return;
+    try {
+        const sessionSaved = Session.get('driver_session');
+        if (sessionSaved && sessionSaved.driverName && (Date.now() - sessionSaved.timestamp < 12 * 60 * 60 * 1000)) {
+            currentDriverName = sessionSaved.driverName;
+            const valid = await verifyDriverSession(sessionSaved.driverName, sessionSaved.pinHash);
+            if (valid) { await restoreWorkOrShowSelect(); return; }
+            // valid=false → _forceLogout()이 showPinSection() 호출하므로 return
+            return;
+        }
+        // 2) localStorage 세션 복원 (탭 닫고 재접속)
+        const lsSaved = lsGetSession();
+        if (lsSaved && lsSaved.driverName && (Date.now() - lsSaved.timestamp < 12 * 60 * 60 * 1000)) {
+            currentDriverName = lsSaved.driverName;
+            const valid = await verifyDriverSession(lsSaved.driverName, lsSaved.pinHash);
+            if (valid) {
+                Session.set('driver_session', { driverName: lsSaved.driverName, pinHash: lsSaved.pinHash, timestamp: Date.now() });
+                await restoreWorkOrShowSelect();
+                return;
+            }
+            return;
+        }
+    } catch (initErr) {
+        // 세션 복원 중 어떤 오류가 나도 반드시 로그인 화면 표시
+        console.error('[driver] 세션 복원 오류:', initErr);
     }
     showPinSection();
 });
@@ -286,7 +283,7 @@ async function restoreWorkOrShowSelect() {
             }
         }
     }
-    await showSelectSection();
+    showSelectSection();
 }
 
 // ★ 네비 앱 / 다른 탭 전환 후 복귀 시 GPS 자동 재시작
@@ -396,15 +393,15 @@ function showPinSection() {
     show('driverPinSection');
     hide('driverSelectSection');
     hide('driverWorkSection');
-    initPinEventListeners();
+    _bindLoginBtn(); // ★ 화면 전환할 때마다 버튼 이벤트 재등록
 }
-async function showSelectSection() {
+function showSelectSection() {
     hide('driverPinSection');
     show('driverSelectSection');
     hide('driverWorkSection');
-    document.getElementById('welcomeDriverName').textContent =
-        `${currentDriverName} 기사님, 환영합니다! 👋`;
-    await loadDeliveriesForDriver();
+    var nameEl = document.getElementById('welcomeDriverName');
+    if (nameEl) nameEl.textContent = currentDriverName + ' 기사님, 환영합니다! 👋';
+    loadDeliveriesForDriver();
     initSelectEventListeners();
 }
 function showWorkSection() {
@@ -418,9 +415,17 @@ function hide(id) { const el = document.getElementById(id); if (el) el.style.dis
 /* =====================
    이벤트 바인딩
    ===================== */
+// ★ 로그인 버튼 이벤트 등록 — onclick(HTML) + addEventListener(JS) 이중 보증
+// _loginInProgress 플래그로 중복 실행 차단
+function _bindLoginBtn() {
+    const btn = document.getElementById('btnDoLogin');
+    if (!btn) return;
+    // 이미 등록된 경우 제거 후 재등록 (로그아웃 후 재진입 대비)
+    btn.removeEventListener('click', handlePinLogin);
+    btn.addEventListener('click', handlePinLogin);
+}
 function initPinEventListeners() {
-    // ★ DOMContentLoaded에서 이미 등록됨 — 여기서 중복 등록 안 함
-    // HTML onclick 속성 제거됨. cloneNode로 이전 리스너 초기화 후 단일 등록.
+    _bindLoginBtn();
 }
 
 function initSelectEventListeners() {
@@ -464,147 +469,158 @@ function resetPinLockout() {
 
 let _loginInProgress = false; // ★ 중복 실행 방지
 
-async function handlePinLogin(e) {
-    // ★ 이벤트 기본 동작 완전 차단
+/* ──────────────────────────────────────────────────────
+   handlePinLogin
+   ★ async/await 완전 제거 — 구형 Android WebView 호환
+   ★ 순수 .then().catch() 체인으로만 작성
+   ────────────────────────────────────────────────────── */
+function handlePinLogin(e) {
+    // 이벤트 기본 동작 차단
     if (e) {
-        try { e.preventDefault(); } catch(ex) {}
-        try { e.stopPropagation(); } catch(ex) {}
-        try { e.stopImmediatePropagation(); } catch(ex) {}
+        try { e.preventDefault(); } catch(x) {}
+        try { e.stopPropagation(); } catch(x) {}
     }
 
-    // ★ 중복 실행 방지 — 이미 진행 중이면 즉시 종료
-    if (_loginInProgress) {
-        console.warn('[handlePinLogin] 이미 진행 중, 중복 호출 무시');
+    // 중복 실행 방지
+    if (_loginInProgress) return;
+    _loginInProgress = true;
+
+    // 디버그 로그 출력 함수
+    function dbg(msg) {
+        console.log('[LOGIN] ' + msg);
+        var dbgEl = document.getElementById('loginDebug');
+        if (dbgEl) dbgEl.textContent = msg;
+    }
+
+    // 버튼 상태 변경
+    var btn = document.getElementById('btnDoLogin');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 확인 중...';
+    }
+
+    // 에러 표시 함수
+    function showErr(msg) {
+        var errEl = document.getElementById('driverPinError');
+        if (errEl) { errEl.textContent = msg; errEl.style.display = 'block'; }
+        showToast(msg, 'error', 5000);
+        dbg('오류: ' + msg);
+    }
+    function hideErr() {
+        var errEl = document.getElementById('driverPinError');
+        if (errEl) errEl.style.display = 'none';
+    }
+
+    // 완료 후 복원 함수
+    function done() {
+        _loginInProgress = false;
+        var b = document.getElementById('btnDoLogin');
+        if (b) {
+            b.disabled = false;
+            b.innerHTML = '<i class="fas fa-sign-in-alt"></i> 로그인';
+        }
+    }
+
+    hideErr();
+    dbg('버튼 클릭됨');
+
+    // 입력값 읽기
+    var nameEl = document.getElementById('pinDriverName');
+    var pinEl  = document.getElementById('pinCode');
+    var name   = nameEl ? (nameEl.value || '').trim() : '';
+    var pin    = pinEl  ? (pinEl.value  || '').trim() : '';
+
+    if (!name || !pin) {
+        showErr('이름과 PIN을 모두 입력해주세요.');
+        done();
         return;
     }
 
-    // ★ 버튼 참조 (최신 DOM에서 가져옴)
-    const btn = document.getElementById('btnDoLogin');
-
-    // finally에서 항상 복원되도록 외부 try-finally 사용
-    _loginInProgress = true;
-    try {
-        // ① 입력값 검증
-        const nameEl = document.getElementById('pinDriverName');
-        const pinEl  = document.getElementById('pinCode');
-        const name   = nameEl ? (nameEl.value || '').trim() : '';
-        const pin    = pinEl  ? (pinEl.value  || '').trim() : '';
-
-        const errEl = document.getElementById('driverPinError');
-        function showErr(msg) {
-            if (errEl) { errEl.textContent = msg; errEl.style.display = 'block'; }
-            showToast(msg, 'error', 4000);
-        }
-        function hideErr() {
-            if (errEl) errEl.style.display = 'none';
-        }
-        hideErr();
-
-        if (!name || !pin) {
-            showErr('이름과 PIN을 모두 입력해주세요.');
-            return;
-        }
-
-        // ② 잠금 확인
-        const lockout = getPinLockout();
-        const now = Date.now();
-        if (lockout.lockedUntil > now) {
-            const sec = Math.ceil((lockout.lockedUntil - now) / 1000);
-            showErr(`로그인 잠금 중 (${sec}초 후 재시도)\n아래 잠금 초기화 버튼을 누르세요.`);
-            return;
-        }
-
-        // ③ 버튼 로딩 상태
-        if (btn) {
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 확인 중...';
-        }
-
-        // ④ API 호출 — 실패 시 명확한 오류 표시
-        let all = [];
-        try {
-            const data = await apiGetList('tables/deliveries?limit=500');
-            all = (data && Array.isArray(data.data)) ? data.data : [];
-            console.log('[handlePinLogin] 배송 목록 조회:', all.length, '건');
-        } catch (apiErr) {
-            const apiMsg = apiErr && apiErr.message ? apiErr.message : String(apiErr);
-            showErr(`서버 연결 실패: ${apiMsg}`);
-            console.error('[handlePinLogin] API 오류:', apiErr);
-            return;
-        }
-
-        // ⑤ PIN 해시 계산
-        let pinHash = null;
-        let pinHashFallback = null;
-        try {
-            pinHash         = await hashPassword(pin);
-            pinHashFallback = _fallbackHash(pin + '_cargo_salt_2025');
-        } catch (hashErr) {
-            showErr('PIN 처리 오류: ' + (hashErr.message || hashErr));
-            return;
-        }
-
-        console.log('[handlePinLogin] 이름:', name, '/ PIN해시 앞8자:', pinHash ? pinHash.substring(0, 8) : 'null');
-
-        // ⑥ 이름 + PIN 매칭
-        const matched = all.filter(d =>
-            d.driver_name &&
-            d.driver_name.replace(/\s/g, '') === name.replace(/\s/g, '') &&
-            (d.driver_pin_hash === pinHash ||
-             d.driver_pin_hash === pinHashFallback ||
-             (d.driver_pin_hash2 && (
-                 d.driver_pin_hash2 === pinHash ||
-                 d.driver_pin_hash2 === pinHashFallback
-             )))
-        );
-
-        console.log('[handlePinLogin] 매칭 결과:', matched.length, '건');
-
-        if (matched.length === 0) {
-            const nameOnly = all.filter(d =>
-                d.driver_name &&
-                d.driver_name.replace(/\s/g, '') === name.replace(/\s/g, '')
-            );
-            const newCount = (lockout.count || 0) + 1;
-            let msg = '';
-            if (newCount >= 5) {
-                const lockSec = Math.min(30 * Math.pow(2, newCount - 5), 600);
-                setPinLockout({ count: newCount, lockedUntil: now + lockSec * 1000 });
-                msg = `5회 실패 — ${lockSec}초 잠금\n아래 잠금 초기화 버튼을 누르세요.`;
-            } else {
-                setPinLockout({ count: newCount, lockedUntil: 0 });
-                msg = nameOnly.length === 0
-                    ? `"${name}" 이름으로 등록된 배송건이 없습니다.\n고객사 담당자에게 문의하세요. (${newCount}/5)`
-                    : `PIN이 올바르지 않습니다. (${newCount}/5회 실패)`;
-            }
-            if (pinEl) pinEl.value = '';
-            showErr(msg);
-            return;
-        }
-
-        // ⑦ 로그인 성공
-        clearPinLockout();
-        currentDriverName = name;
-        Session.set('driver_session', { driverName: name, pinHash, timestamp: Date.now() });
-        lsSaveSession(name, pinHash);
-        showToast(`${name} 기사님, 로그인되었습니다! 🎉`, 'success');
-        await showSelectSection();
-
-    } catch (err) {
-        const msg = err && err.message ? err.message : String(err);
-        console.error('[handlePinLogin] 예외 발생:', err);
-        showToast(`오류 발생: ${msg}`, 'error', 5000);
-        const errEl = document.getElementById('driverPinError');
-        if (errEl) { errEl.textContent = '오류: ' + msg; errEl.style.display = 'block'; }
-    } finally {
-        // ★ 항상 실행 — 플래그 초기화 및 버튼 복원
-        _loginInProgress = false;
-        const btnFinal = document.getElementById('btnDoLogin');
-        if (btnFinal) {
-            btnFinal.disabled = false;
-            btnFinal.innerHTML = '<i class="fas fa-sign-in-alt"></i> 로그인';
-        }
+    // 잠금 확인
+    var lockout = getPinLockout();
+    var now = Date.now();
+    if (lockout.lockedUntil > now) {
+        var sec = Math.ceil((lockout.lockedUntil - now) / 1000);
+        showErr('로그인 잠금 중 (' + sec + '초 후 재시도)\n아래 잠금 초기화 버튼을 누르세요.');
+        done();
+        return;
     }
+
+    dbg('서버 연결 중...');
+
+    // API 호출 — fetch 직접 사용 (apiGetList 래퍼 우회)
+    fetch('tables/deliveries?limit=500')
+        .then(function(res) {
+            dbg('응답 수신: HTTP ' + res.status);
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.json();
+        })
+        .then(function(json) {
+            var all = (json && Array.isArray(json.data)) ? json.data : [];
+            dbg('배송건 ' + all.length + '개 로드됨');
+
+            // PIN 해시 계산 — hashPassword 결과 Promise 처리
+            return hashPassword(pin).then(function(pinHash) {
+                var pinHashFallback = _fallbackHash(pin + '_cargo_salt_2025');
+                dbg('해시 계산 완료. 이름: ' + name);
+
+                var matched = all.filter(function(d) {
+                    if (!d.driver_name) return false;
+                    var dName = d.driver_name.replace(/\s/g, '');
+                    var iName = name.replace(/\s/g, '');
+                    if (dName !== iName) return false;
+                    return (
+                        d.driver_pin_hash === pinHash ||
+                        d.driver_pin_hash === pinHashFallback ||
+                        (d.driver_pin_hash2 && (
+                            d.driver_pin_hash2 === pinHash ||
+                            d.driver_pin_hash2 === pinHashFallback
+                        ))
+                    );
+                });
+
+                dbg('매칭: ' + matched.length + '건 (전체 ' + all.length + '건)');
+
+                if (matched.length === 0) {
+                    var nameOnly = all.filter(function(d) {
+                        return d.driver_name &&
+                            d.driver_name.replace(/\s/g, '') === name.replace(/\s/g, '');
+                    });
+                    var newCount = (lockout.count || 0) + 1;
+                    var msg = '';
+                    if (newCount >= 5) {
+                        var lockSec = Math.min(30 * Math.pow(2, newCount - 5), 600);
+                        setPinLockout({ count: newCount, lockedUntil: Date.now() + lockSec * 1000 });
+                        msg = '5회 실패 — ' + lockSec + '초 잠금\n아래 잠금 초기화 버튼을 누르세요.';
+                    } else {
+                        setPinLockout({ count: newCount, lockedUntil: 0 });
+                        msg = nameOnly.length === 0
+                            ? '"' + name + '" 이름으로 등록된 배송건이 없습니다. (' + newCount + '/5)\n고객사 담당자에게 문의하세요.'
+                            : 'PIN이 올바르지 않습니다. (' + newCount + '/5회 실패)';
+                    }
+                    if (pinEl) pinEl.value = '';
+                    showErr(msg);
+                    done();
+                    return;
+                }
+
+                // 로그인 성공
+                clearPinLockout();
+                currentDriverName = name;
+                Session.set('driver_session', { driverName: name, pinHash: pinHash, timestamp: Date.now() });
+                lsSaveSession(name, pinHash);
+                dbg('로그인 성공!');
+                showToast(name + ' 기사님, 로그인되었습니다! 🎉', 'success');
+                done();
+                showSelectSection();
+            });
+        })
+        .catch(function(err) {
+            var msg = err && err.message ? err.message : String(err);
+            dbg('오류: ' + msg);
+            showErr('서버 오류: ' + msg);
+            done();
+        });
 }
 
 /* =====================

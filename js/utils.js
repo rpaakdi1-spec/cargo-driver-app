@@ -57,15 +57,20 @@ function _fallbackHash(str) {
 
 // ===== 비밀번호 표시/숨기기 =====
 function togglePassword(inputId) {
-    const input = document.getElementById(inputId);
-    const btn = input.closest('.input-with-icon').querySelector('.toggle-pw i');
-    if (input.type === 'password') {
-        input.type = 'text';
-        btn.className = 'fas fa-eye-slash';
-    } else {
-        input.type = 'password';
-        btn.className = 'fas fa-eye';
-    }
+    try {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+        // .input-with-icon 또는 .pin-input-wrap 둘 다 지원
+        const wrap = input.closest('.input-with-icon') || input.closest('.pin-input-wrap') || input.parentElement;
+        const icon = wrap ? wrap.querySelector('.toggle-pw i') : null;
+        if (input.type === 'password') {
+            input.type = 'text';
+            if (icon) icon.className = 'fas fa-eye-slash';
+        } else {
+            input.type = 'password';
+            if (icon) icon.className = 'fas fa-eye';
+        }
+    } catch(e) { console.warn('[togglePassword] 오류:', e); }
 }
 
 // ===== 알림음 (Web Audio API — 외부 파일 없이 비프음 생성) =====

@@ -1,6 +1,6 @@
 # 화물운송 관리 시스템 — 사용방법 완전 가이드
 
-> **버전**: v20250321AD | **최종 수정**: 2025-03-22
+> **버전**: v20250321AF | **최종 수정**: 2025-03-22
 
 ---
 
@@ -405,7 +405,8 @@ UVIS 서버 업로드 시도
 
 | 버전 | 날짜 | 주요 변경 내용 |
 |------|------|----------------|
-| **v20250321AD** | 2025-03-22 | **🔴 로그인 버튼 색만 바뀌고 동작 안 함 완전 해결**: `cloneNode(true)`+`replaceChild`로 버튼 DOM 교체 후 이벤트 등록 → 이후 `showPinSection()` 재호출 시 원본 버튼 참조 끊어져 이벤트 소실. 해결: `cloneNode` 제거, HTML 버튼에 `onclick="handlePinLogin(event)"` 직접 추가(항상 동작 보장) + `addEventListener` 이중 보증, `_loginInProgress` 플래그로 중복 실행 차단 |
+| **v20250321AF** | 2025-03-22 | **🔴 로그인 완전 재작성 — 구형 Android WebView 완전 호환**: `handlePinLogin` 전체를 `async/await` 제거, 순수 `.then().catch()` 체인으로 재작성. `showSelectSection` `async` 제거. 로그인 화면에 실시간 디버그 상태 표시(`loginDebug`). `fetch` 직접 사용. `var` 선언으로 ES5 호환 강화 |
+| **v20250321AE** | 2025-03-22 | **🔴 로그인 전체 근본 해결**: ① `_bindLoginBtn()` 헬퍼 도입 — `removeEventListener`+`addEventListener` 시퀀스로 로그아웃 후 재진입 시도 이벤트 정상 등록 ② `showPinSection()` 호출 시마다 `_bindLoginBtn()` 실행 ③ `DOMContentLoaded` 세션복원 로직 try-catch로 감싸 — 어떤 오류에도 반드시 `showPinSection()` 호출 보장 ④ `togglePassword` 함수 오류 해결 — `.input-with-icon` 미존재 시 `.pin-input-wrap` 폴백 처리로 JS 실행 중단 방지 |
 | **v20250321AC** | 2025-03-22 | **🔴 기사앱 로그인 버튼 클릭 후 무반응 완전 근절**: 중첩 try-catch에서 return 시 finally 미실행 → `_loginInProgress` 고착. `_resetLoginBtn()` 헬퍼 도입, 모든 return 경로마다 호출 보장 |
 | **v20250321AA** | 2025-03-21 | **🔴 로그인 입력후 클릭해도 무반응 확실히 해결**: `_loginInProgress=true` 설정 후 early return(입력 빈칤/잠금) 시 `finally` 미실행 → 플래그 true 고정 → 이후 모든 클릭 무시됨. 전체 로직을 하나의 try...finally로 감싸서 어떤 경로든 finally가 항상 실행되도록 수정 |
 | **v20250321Z** | 2025-03-21 | **🔴 로그인 버튼 무응답 해결**: `initPinEventListeners`가 비어있어 이벤트 등록 안됨. `DOMContentLoaded` 시점에 `btnDoLogin.addEventListener('click', handlePinLogin)` 직접 등록. HTML `onclick` + `addEventListener` 이중 등록 대비 `_loginInProgress` 플래그로 중복 실행 방지 |

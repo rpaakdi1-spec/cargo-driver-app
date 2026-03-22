@@ -72,6 +72,8 @@
                     </div>
                 </div>
                 <div id="driverPinError" class="error-msg" style="display:none;"></div>
+                <!-- 디버그 상태 표시 (항상 표시) -->
+                <div id="loginDebug" style="font-size:0.72rem;color:#64748b;margin-bottom:6px;min-height:18px;text-align:center;"></div>
                 <!-- ★ type="button" + onclick 직접 설정 — addEventListener 못 잡는 WebView 대비 이중 보증 -->
                 <button type="button" class="btn btn-primary btn-block" id="btnDoLogin"
                     onclick="handlePinLogin(event)">
@@ -325,7 +327,7 @@
            style="color:#e2e8f0;margin-top:12px;font-size:0.85rem;text-align:center;padding:0 16px;"></p>
     </div>
 
-    <script src="js/utils.js?v=20250321AD"></script>
-    <script src="js/driver.js?v=20250321AD"></script>
+    <script src="js/utils.js?v=20250321AF"></script>
+    <script src="js/driver.js?v=20250321AF"></script>
 </body>
 </html>
