@@ -184,7 +184,7 @@ public class MainActivity extends AppCompatActivity {
         s.setAllowContentAccess(true);         // Content URI 접근
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         s.setUserAgentString(s.getUserAgentString() + " CargoDriverApp/1.0");
-        s.setCacheMode(WebSettings.LOAD_DEFAULT);
+        s.setCacheMode(WebSettings.LOAD_NO_CACHE); // ★ 항상 최신 JS 로드 (캐시 무시)
 
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
 

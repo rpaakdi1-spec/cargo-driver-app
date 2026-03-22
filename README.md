@@ -1,6 +1,6 @@
 # 화물운송 관리 시스템 — 사용방법 완전 가이드
 
-> **버전**: v20250321T | **최종 수정**: 2025-03-21
+> **버전**: v20250321AD | **최종 수정**: 2025-03-22
 
 ---
 
@@ -405,7 +405,16 @@ UVIS 서버 업로드 시도
 
 | 버전 | 날짜 | 주요 변경 내용 |
 |------|------|----------------|
-| **v20250321T** | 2025-03-21 | **🟢 고객사 룸 배송상세정보 추가사진 표시 개선**: ① `room.js` — 상차/하차 추가사진 섹션을 사진이 0장이어도 항상 표시 ("기사가 업로드한 추가사진이 나타납니다" 안내 문구). ② `saveLoadingExtraPhotos()` — 저장 실패 시 오류 토스트 표시 + 900KB 초과 시 저장 차단 경고. ③ `saveStopPhotos()` — 동일 크기 제한 + 실패 토스트 추가. ④ `room.js` 캐시 버전 S→T 업데이트 (H로 캐시되어 추가사진 코드 미적용 문제 해결). ⑤ 추가사진 img onerror 처리 추가 |
+| **v20250321AD** | 2025-03-22 | **🔴 로그인 버튼 색만 바뀌고 동작 안 함 완전 해결**: `cloneNode(true)`+`replaceChild`로 버튼 DOM 교체 후 이벤트 등록 → 이후 `showPinSection()` 재호출 시 원본 버튼 참조 끊어져 이벤트 소실. 해결: `cloneNode` 제거, HTML 버튼에 `onclick="handlePinLogin(event)"` 직접 추가(항상 동작 보장) + `addEventListener` 이중 보증, `_loginInProgress` 플래그로 중복 실행 차단 |
+| **v20250321AC** | 2025-03-22 | **🔴 기사앱 로그인 버튼 클릭 후 무반응 완전 근절**: 중첩 try-catch에서 return 시 finally 미실행 → `_loginInProgress` 고착. `_resetLoginBtn()` 헬퍼 도입, 모든 return 경로마다 호출 보장 |
+| **v20250321AA** | 2025-03-21 | **🔴 로그인 입력후 클릭해도 무반응 확실히 해결**: `_loginInProgress=true` 설정 후 early return(입력 빈칤/잠금) 시 `finally` 미실행 → 플래그 true 고정 → 이후 모든 클릭 무시됨. 전체 로직을 하나의 try...finally로 감싸서 어떤 경로든 finally가 항상 실행되도록 수정 |
+| **v20250321Z** | 2025-03-21 | **🔴 로그인 버튼 무응답 해결**: `initPinEventListeners`가 비어있어 이벤트 등록 안됨. `DOMContentLoaded` 시점에 `btnDoLogin.addEventListener('click', handlePinLogin)` 직접 등록. HTML `onclick` + `addEventListener` 이중 등록 대비 `_loginInProgress` 플래그로 중복 실행 방지 |
+| **v20250321Y** | 2025-03-21 | **🔴 APK 로그인 리로드 해결**: `<form>` 태그 → `<div>` 교체, `type="button"` + HTML inline onclick |
+| **v20250321X** | 2025-03-21 | **🔴 로그인 재작성**: 버튼 click 직접 등록, `resetPinLockout` 추가 |
+| **v20250321W** | 2025-03-21 | **🔴 로그인 크래시 수정**: `e.target.querySelector()` 대신 `form.querySelector()` 사용, `finally` 에서 `if(btn)` 조건 추가 |
+| **v20250321V** | 2025-03-21 | **🔴 로그인 버튼 누르면 페이지 새로고침 문제 해결**: `form.addEventListener` 누적 등록 → `form.onsubmit` 방식으로 변경 |
+| **v20250321U** | 2025-03-21 | **🔴 기사 앱 로그인 안됨 해결**: `handlePinLogin` 에서 `d.status !== 'delivered'` 조건이 있어 배송완료 기사 로그인 가능하도록 수정. `verifyDriverSession` 동일 수정. 에러 메시지 개선 |
+| **v20250321T** | 2025-03-21 | **🟢 고객사 룸 배송상세정보 추가사진 표시 개선**: ① `room.js` — 상차/하차 추가사진 섹션을 사진이 0장이어도 항상 표시. ② `saveLoadingExtraPhotos()` — 저장 실패 시 오류 토스트 + 900KB 초과 차단. ③ `saveStopPhotos()` 동일 개선. ④ room.js 버전 H→T 캐시 무효화 |
 | **v20250321S** | 2025-03-21 | **🔴 카메라 촬영 결과 전달 실패(APK) + 하차사진 저장 실패 해결**: ① `MainActivity.java` `fileChooserLauncher` — 카메라 촬영 후 `getData()`가 null일 때 `cameraImageUri`(EXTRA_OUTPUT 저장 파일)를 사용하도록 수정. 이것이 "카메라 촬영 후 아무 동작 없음"의 진짜 원인이었음 ② Base64 압축 강화 — 150KB 이하 보장(5단계). stop_photos에 여러 이미지 묶어 저장 시 페이로드 과대 방지 ③ `saveStopPhotos()` 에러 로그 강화 |
 | **v20250321R** | 2025-03-21 | **🔴 카메라 촬영 후 업로드 안됨 근본 해결(3차)**: labelWrap.onclick도 Android WebView에서 onchange 억제함을 확인. 모든 onclick(input, labelWrap, wrap) 완전 제거. 대신 visibilitychange → hidden 시점에 setFilePickerOpen(true) 설정. onchange 미발생 시 30초 타임아웃 자동 해제 |
 | **v20250321Q** | 2025-03-21 | **🔴 사진보관함 업로드 사진 전혀 안보이는 문제 해결**: apiGetList가 사진필드를 자동 제거하는 구조적 문제 근본 수정. gallery.js의 loadAllData()를 2단계로 재설계. applyFilter도 보완: stop_photos JSON에서 하차사진 추출, 상차/하차 추가사진(extra_photos) 표시 |

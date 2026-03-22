@@ -53,31 +53,40 @@
             <h2>기사 PIN 로그인</h2>
             <p>배송 등록 시 부여받은 이름과 PIN 코드를 입력하세요</p>
 
-            <form id="driverPinForm">
+            <!-- ★ form 태그 제거 — Android WebView에서 submit이 페이지 리로드 유발 -->
+            <div id="driverPinForm">
                 <div class="form-group">
                     <label><i class="fas fa-user"></i> 기사 이름 <span class="required">*</span></label>
-                    <input type="text" id="pinDriverName" placeholder="예: 홍길동" required autocomplete="off" maxlength="30" />
+                    <input type="text" id="pinDriverName" placeholder="예: 홍길동" autocomplete="off" maxlength="30"
+                        onkeydown="if(event.key==='Enter'){document.getElementById('pinCode').focus();}" />
                 </div>
                 <div class="form-group">
                     <label><i class="fas fa-key"></i> PIN 코드 <span class="required">*</span></label>
                     <div class="pin-input-wrap">
                         <input type="password" id="pinCode" placeholder="숫자 4~8자리"
-                            inputmode="numeric" minlength="4" maxlength="8" pattern="\d{4,8}" required autocomplete="off"
-                            title="숫자 4~8자리 PIN을 입력해주세요"/>
+                            inputmode="numeric" maxlength="8" autocomplete="off"
+                            onkeydown="if(event.key==='Enter'){document.getElementById('btnDoLogin').click();}"/>
                         <button type="button" class="toggle-pw" onclick="togglePassword('pinCode')">
                             <i class="fas fa-eye"></i>
                         </button>
                     </div>
                 </div>
                 <div id="driverPinError" class="error-msg" style="display:none;"></div>
-                <button type="submit" class="btn btn-primary btn-block">
+                <!-- ★ type="button" + onclick 직접 설정 — addEventListener 못 잡는 WebView 대비 이중 보증 -->
+                <button type="button" class="btn btn-primary btn-block" id="btnDoLogin"
+                    onclick="handlePinLogin(event)">
                     <i class="fas fa-sign-in-alt"></i> 로그인
                 </button>
-            </form>
+            </div>
 
             <div class="pin-guide">
                 <i class="fas fa-info-circle"></i>
                 PIN 코드는 고객사 담당자에게 문의하세요
+            </div>
+            <div style="margin-top:12px;text-align:center;">
+                <button type="button" onclick="resetPinLockout()" style="background:none;border:none;color:#94a3b8;font-size:0.75rem;cursor:pointer;text-decoration:underline;padding:4px 8px;">
+                    <i class="fas fa-unlock"></i> 로그인 잠금 초기화
+                </button>
             </div>
         </div>
     </div>
@@ -316,7 +325,7 @@
            style="color:#e2e8f0;margin-top:12px;font-size:0.85rem;text-align:center;padding:0 16px;"></p>
     </div>
 
-    <script src="js/utils.js?v=20250321T"></script>
-    <script src="js/driver.js?v=20250321T"></script>
+    <script src="js/utils.js?v=20250321AD"></script>
+    <script src="js/driver.js?v=20250321AD"></script>
 </body>
 </html>
