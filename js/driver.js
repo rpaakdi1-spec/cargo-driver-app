@@ -1,6 +1,6 @@
 /* ===========================
    기사 페이지 JS - driver.js
-   v20250321AF
+   v20250322B
    - 촬영 즉시 자동업로드
    - 수정 버튼 (재촬영)
    - GPS 지속 유지 + 자동 재시도
@@ -460,168 +460,11 @@ function getPinLockout() {
 function setPinLockout(obj) { localStorage.setItem(PIN_LOCKOUT_KEY, JSON.stringify(obj)); }
 function clearPinLockout() { localStorage.removeItem(PIN_LOCKOUT_KEY); }
 
-// ★ PIN 잠금 수동 초기화 (화면 버튼에서 호출)
-function resetPinLockout() {
-    clearPinLockout();
-    hideError('driverPinError');
-    showToast('로그인 잠금이 초기화되었습니다.', 'success');
-}
+/* resetPinLockout 은 login.js 에서 정의 */
 
-let _loginInProgress = false; // ★ 중복 실행 방지
+let _loginInProgress = false; // login.js와 호환용 (미사용)
 
-/* ──────────────────────────────────────────────────────
-   handlePinLogin
-   ★ async/await 완전 제거 — 구형 Android WebView 호환
-   ★ 순수 .then().catch() 체인으로만 작성
-   ────────────────────────────────────────────────────── */
-function handlePinLogin(e) {
-    // 이벤트 기본 동작 차단
-    if (e) {
-        try { e.preventDefault(); } catch(x) {}
-        try { e.stopPropagation(); } catch(x) {}
-    }
-
-    // 중복 실행 방지
-    if (_loginInProgress) return;
-    _loginInProgress = true;
-
-    // 디버그 로그 출력 함수
-    function dbg(msg) {
-        console.log('[LOGIN] ' + msg);
-        var dbgEl = document.getElementById('loginDebug');
-        if (dbgEl) dbgEl.textContent = msg;
-    }
-
-    // 버튼 상태 변경
-    var btn = document.getElementById('btnDoLogin');
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 확인 중...';
-    }
-
-    // 에러 표시 함수
-    function showErr(msg) {
-        var errEl = document.getElementById('driverPinError');
-        if (errEl) { errEl.textContent = msg; errEl.style.display = 'block'; }
-        showToast(msg, 'error', 5000);
-        dbg('오류: ' + msg);
-    }
-    function hideErr() {
-        var errEl = document.getElementById('driverPinError');
-        if (errEl) errEl.style.display = 'none';
-    }
-
-    // 완료 후 복원 함수
-    function done() {
-        _loginInProgress = false;
-        var b = document.getElementById('btnDoLogin');
-        if (b) {
-            b.disabled = false;
-            b.innerHTML = '<i class="fas fa-sign-in-alt"></i> 로그인';
-        }
-    }
-
-    hideErr();
-    dbg('버튼 클릭됨');
-
-    // 입력값 읽기
-    var nameEl = document.getElementById('pinDriverName');
-    var pinEl  = document.getElementById('pinCode');
-    var name   = nameEl ? (nameEl.value || '').trim() : '';
-    var pin    = pinEl  ? (pinEl.value  || '').trim() : '';
-
-    if (!name || !pin) {
-        showErr('이름과 PIN을 모두 입력해주세요.');
-        done();
-        return;
-    }
-
-    // 잠금 확인
-    var lockout = getPinLockout();
-    var now = Date.now();
-    if (lockout.lockedUntil > now) {
-        var sec = Math.ceil((lockout.lockedUntil - now) / 1000);
-        showErr('로그인 잠금 중 (' + sec + '초 후 재시도)\n아래 잠금 초기화 버튼을 누르세요.');
-        done();
-        return;
-    }
-
-    dbg('서버 연결 중...');
-
-    // API 호출 — fetch 직접 사용 (apiGetList 래퍼 우회)
-    fetch('tables/deliveries?limit=500')
-        .then(function(res) {
-            dbg('응답 수신: HTTP ' + res.status);
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            return res.json();
-        })
-        .then(function(json) {
-            var all = (json && Array.isArray(json.data)) ? json.data : [];
-            dbg('배송건 ' + all.length + '개 로드됨');
-
-            // PIN 해시 계산 — hashPassword 결과 Promise 처리
-            return hashPassword(pin).then(function(pinHash) {
-                var pinHashFallback = _fallbackHash(pin + '_cargo_salt_2025');
-                dbg('해시 계산 완료. 이름: ' + name);
-
-                var matched = all.filter(function(d) {
-                    if (!d.driver_name) return false;
-                    var dName = d.driver_name.replace(/\s/g, '');
-                    var iName = name.replace(/\s/g, '');
-                    if (dName !== iName) return false;
-                    return (
-                        d.driver_pin_hash === pinHash ||
-                        d.driver_pin_hash === pinHashFallback ||
-                        (d.driver_pin_hash2 && (
-                            d.driver_pin_hash2 === pinHash ||
-                            d.driver_pin_hash2 === pinHashFallback
-                        ))
-                    );
-                });
-
-                dbg('매칭: ' + matched.length + '건 (전체 ' + all.length + '건)');
-
-                if (matched.length === 0) {
-                    var nameOnly = all.filter(function(d) {
-                        return d.driver_name &&
-                            d.driver_name.replace(/\s/g, '') === name.replace(/\s/g, '');
-                    });
-                    var newCount = (lockout.count || 0) + 1;
-                    var msg = '';
-                    if (newCount >= 5) {
-                        var lockSec = Math.min(30 * Math.pow(2, newCount - 5), 600);
-                        setPinLockout({ count: newCount, lockedUntil: Date.now() + lockSec * 1000 });
-                        msg = '5회 실패 — ' + lockSec + '초 잠금\n아래 잠금 초기화 버튼을 누르세요.';
-                    } else {
-                        setPinLockout({ count: newCount, lockedUntil: 0 });
-                        msg = nameOnly.length === 0
-                            ? '"' + name + '" 이름으로 등록된 배송건이 없습니다. (' + newCount + '/5)\n고객사 담당자에게 문의하세요.'
-                            : 'PIN이 올바르지 않습니다. (' + newCount + '/5회 실패)';
-                    }
-                    if (pinEl) pinEl.value = '';
-                    showErr(msg);
-                    done();
-                    return;
-                }
-
-                // 로그인 성공
-                clearPinLockout();
-                currentDriverName = name;
-                Session.set('driver_session', { driverName: name, pinHash: pinHash, timestamp: Date.now() });
-                lsSaveSession(name, pinHash);
-                dbg('로그인 성공!');
-                showToast(name + ' 기사님, 로그인되었습니다! 🎉', 'success');
-                done();
-                showSelectSection();
-            });
-        })
-        .catch(function(err) {
-            var msg = err && err.message ? err.message : String(err);
-            dbg('오류: ' + msg);
-            showErr('서버 오류: ' + msg);
-            done();
-        });
-}
+/* handlePinLogin, togglePassword, resetPinLockout 은 login.js 에서 정의 */
 
 /* =====================
    배송건 목록 로드
@@ -1346,6 +1189,8 @@ async function uploadStopPhoto(idx, type) {
         showToast('하차 사진 저장 실패. 다시 시도해주세요.', 'error');
         setPhotoPreview(prevId, photo);
     }
+}
+
 function triggerStopRePhoto(idx, type) {
     const inputId = type === 'invoice' ? `stopInvInput_${idx}` : `stopTmpInput_${idx}`;
     const input   = document.getElementById(inputId);

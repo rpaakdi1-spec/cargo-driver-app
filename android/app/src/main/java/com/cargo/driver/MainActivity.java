@@ -13,7 +13,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.MediaStore;
 import android.provider.Settings;
-import android.webkit.CookieManager;
+import android.webkit.ConsoleMessage;
 import android.webkit.GeolocationPermissions;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -205,10 +205,40 @@ public class MainActivity extends AppCompatActivity {
                 }
                 return false;
             }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                Log.d("WebView", "페이지 로드 완료: " + url);
+                // ★ 페이지 로드 완료 후 JS 실행 확인
+                view.evaluateJavascript(
+                    "(function(){ return typeof handlePinLogin !== 'undefined' ? 'OK' : 'MISSING'; })()",
+                    value -> Log.d("WebView", "handlePinLogin 함수 상태: " + value)
+                );
+            }
+
+            @Override
+            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+                Log.e("WebView", "로드 오류 [" + errorCode + "]: " + description + " URL: " + failingUrl);
+            }
         });
 
-        // ─── WebChromeClient (파일 선택 + GPS 권한) ───────────
+        // ─── WebChromeClient (파일 선택 + GPS 권한 + JS 콘솔) ──
         webView.setWebChromeClient(new WebChromeClient() {
+
+            // ★ JS console.log → Android Logcat 출력 (디버깅용)
+            @Override
+            public boolean onConsoleMessage(ConsoleMessage msg) {
+                String level = msg.messageLevel().toString();
+                String text  = "[JS:" + level + "] " + msg.message()
+                        + " (" + msg.sourceId() + ":" + msg.lineNumber() + ")";
+                if (msg.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
+                    Log.e("WebViewJS", text);
+                } else {
+                    Log.d("WebViewJS", text);
+                }
+                return true;
+            }
 
             // ★★★ 핵심: input[type=file] 처리 ★★★
             @Override
